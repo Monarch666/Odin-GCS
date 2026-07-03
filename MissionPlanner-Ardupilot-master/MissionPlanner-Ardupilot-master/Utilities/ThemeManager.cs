@@ -862,6 +862,18 @@ mc:Ignorable=""d""
             return false;
         }
 
+        private static bool IsInsideFlightData(Control control)
+        {
+            Control p = control;
+            while (p != null)
+            {
+                if (p.GetType().FullName == "MissionPlanner.GCSViews.FlightData")
+                    return true;
+                p = p.Parent;
+            }
+            return false;
+        }
+
         private static void ApplyCustomTheme(Control temp, int level)
         {
             Color oldBGColor = BGColor;
@@ -872,7 +884,8 @@ mc:Ignorable=""d""
             Color oldButBorder = ButBorder;
 
             bool isOdinSetup = IsInsideInitialSetup(temp);
-            if (isOdinSetup)
+            bool isDarkPanel = isOdinSetup || IsInsideFlightData(temp);
+            if (isDarkPanel)
             {
                 BGColor = Color.FromArgb(17, 18, 22);      // #111216
                 TextColor = Color.White;
@@ -922,7 +935,7 @@ mc:Ignorable=""d""
                 }
                 else if (ctl.GetType() == typeof(MyLabel))
                 {
-                    ctl.BackColor = isOdinSetup ? Color.Transparent : BGColor;
+                    ctl.BackColor = isDarkPanel ? Color.Transparent : BGColor;
                     ctl.ForeColor = TextColor;
                 }
                 else if (ctl.GetType() == typeof(Button))
@@ -1141,10 +1154,10 @@ mc:Ignorable=""d""
                     ApplyCustomTheme(ctl, 1);
 
                 // Apply global font override
-                try { ctl.Font = new Font(isOdinSetup ? "Segoe UI" : "Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
+                try { ctl.Font = new Font(isDarkPanel ? "Segoe UI" : "Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
             }
 
-            if (isOdinSetup)
+            if (isDarkPanel)
             {
                 BGColor = oldBGColor;
                 TextColor = oldTextColor;
@@ -1169,7 +1182,8 @@ mc:Ignorable=""d""
             Color oldBannerColor2 = BannerColor2;
 
             bool isOdinSetup = IsInsideInitialSetup(temp);
-            if (isOdinSetup)
+            bool isDarkPanel = isOdinSetup || IsInsideFlightData(temp);
+            if (isDarkPanel)
             {
                 BGColor = Color.FromArgb(17, 18, 22);      // #111216
                 TextColor = Color.White;
@@ -1193,7 +1207,7 @@ mc:Ignorable=""d""
             {
                 if (ctl.GetType() == typeof(Label) || ctl.GetType() == typeof(MyLabel))
                 {
-                    if (isOdinSetup)
+                    if (isDarkPanel)
                     {
                         ctl.BackColor = Color.Transparent;
                         ctl.ForeColor = Color.White;
@@ -1486,14 +1500,19 @@ mc:Ignorable=""d""
                     ((MyProgressBar)ctl).BGGradBot = ProgressBarColorBot;
                     ((MyProgressBar)ctl).Outline = ProgressBarOutlineColor;        //sets the colour of the progress bar box
                 }
+                else if (ctl.GetType().Name == "HUD" || ctl.GetType().Name == "HUD2")
+                {
+                    ctl.BackColor = Color.FromArgb(17, 18, 22);
+                }
+
                 if ((ctl.Controls.Count > 0) && (ctl.GetType() != typeof(QuickView)))      //Do not iterate into quickView type leave labels as they are
                     ApplyTheme(ctl, 1);
 
                 // Apply global font override
-                try { ctl.Font = new Font(isOdinSetup ? "Segoe UI" : "Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
+                try { ctl.Font = new Font(isDarkPanel ? "Segoe UI" : "Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
             }
 
-            if (isOdinSetup)
+            if (isDarkPanel)
             {
                 BGColor = oldBGColor;
                 TextColor = oldTextColor;

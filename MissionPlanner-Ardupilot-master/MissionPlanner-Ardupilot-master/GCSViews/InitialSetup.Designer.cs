@@ -322,7 +322,7 @@ namespace MissionPlanner.GCSViews
             headerPanel.Controls.Add(separatorLine);
 
             this.Controls.Add(headerPanel);
-            headerPanel.BringToFront();
+            headerPanel.SendToBack();
 
             this.ResumeLayout(false);
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -41,7 +41,9 @@ namespace MissionPlanner.Controls
         public MainSwitcher(Control Parent)
         {
             MainControl.Dock = DockStyle.Fill;
-
+            MainControl.Padding = new Padding(0, 45, 0, 0);
+            MainControl.BackColor = Color.FromArgb(17, 18, 22);
+ 
             Parent.Controls.Add(MainControl);
         }
 

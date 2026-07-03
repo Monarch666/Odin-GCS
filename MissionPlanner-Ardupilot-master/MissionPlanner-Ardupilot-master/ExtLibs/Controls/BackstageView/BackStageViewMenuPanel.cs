@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
@@ -24,20 +24,14 @@ namespace MissionPlanner.Controls.BackstageView
 
         protected override void OnPaintBackground(PaintEventArgs pevent)
         {
-            base.OnPaintBackground(pevent);
-
-            var rc = new Rectangle(ClientSize.Width - GradientWidth, 0, GradientWidth, this.ClientSize.Height);
-
-            // prevent LinearGradientBrush exception on 0 height
-            if (rc.Height == 0 || rc.Width == 0)
-                return;
-
-            using (var brush = new LinearGradientBrush(rc, BackColor, GradColor, LinearGradientMode.Horizontal))
+            // Fill with solid background color (dark theme compatible)
+            using (var bgBrush = new SolidBrush(BackColor))
             {
-                pevent.Graphics.FillRectangle(brush, rc);
+                pevent.Graphics.FillRectangle(bgBrush, this.ClientRectangle);
             }
 
-            pevent.Graphics.DrawLine(new Pen(PencilBorderColor), Width-1,0,Width-1,Height);
+            // Subtle right-edge separator line
+            pevent.Graphics.DrawLine(new Pen(PencilBorderColor), Width - 1, 0, Width - 1, Height);
         }
 
         protected override void OnResize(System.EventArgs eventargs)

@@ -1,4 +1,4 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
 
 namespace MissionPlanner.GCSViews
 {
@@ -252,8 +252,79 @@ namespace MissionPlanner.GCSViews
             resources.ApplyResources(this, "$this");
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.HardwareConfig_FormClosing);
             this.Load += new System.EventHandler(this.HardwareConfig_Load);
+            ApplyOdinSetupTheme();
             this.ResumeLayout(false);
 
+        }
+
+        /// <summary>
+        /// Applies the Odin GCS dark theme to the InitialSetup view,
+        /// matching the AERO-GCS: Advanced Setup & Calibration design.
+        /// </summary>
+        private void ApplyOdinSetupTheme()
+        {
+            this.SuspendLayout();
+
+            // Odin color palette (matches MainV2.OdinTheme)
+            System.Drawing.Color bgColor = System.Drawing.Color.FromArgb(17, 18, 22);      // #111216
+            System.Drawing.Color panelColor = System.Drawing.Color.FromArgb(24, 26, 30);    // #181A1E
+            System.Drawing.Color panel2Color = System.Drawing.Color.FromArgb(32, 35, 40);   // #202328
+            System.Drawing.Color accentRed = System.Drawing.Color.FromArgb(204, 0, 0);      // #CC0000
+            System.Drawing.Color borderColor = System.Drawing.Color.FromArgb(45, 45, 45);   // #2D2D2D
+            System.Drawing.Color textWhite = System.Drawing.Color.White;
+            System.Drawing.Color textDim = System.Drawing.Color.FromArgb(140, 140, 140);    // #8C8C8C
+            System.Drawing.Color sidebarBg = System.Drawing.Color.FromArgb(20, 22, 26);     // #14161A
+
+            // Style the main control
+            this.BackColor = bgColor;
+            this.ForeColor = textWhite;
+
+            // Style the backstageView control
+            this.backstageView.BackColor = bgColor;
+            this.backstageView.ForeColor = textWhite;
+            this.backstageView.ButtonsAreaBgColor = sidebarBg;
+            this.backstageView.ButtonsAreaPencilColor = borderColor;
+            this.backstageView.SelectedTextColor = textWhite;
+            this.backstageView.UnSelectedTextColor = textDim;
+            this.backstageView.HighlightColor1 = accentRed;
+            this.backstageView.HighlightColor2 = System.Drawing.Color.FromArgb(140, 0, 0); // darker red gradient
+            this.backstageView.WidthMenu = 190;
+
+            // Add a header panel above the backstageView
+            System.Windows.Forms.Panel headerPanel = new System.Windows.Forms.Panel();
+            headerPanel.Name = "odinSetupHeader";
+            headerPanel.Height = 40;
+            headerPanel.Dock = System.Windows.Forms.DockStyle.Top;
+            headerPanel.BackColor = bgColor;
+            headerPanel.Padding = new System.Windows.Forms.Padding(12, 0, 0, 0);
+
+            // Left border accent line
+            System.Windows.Forms.Panel accentLine = new System.Windows.Forms.Panel();
+            accentLine.Width = 3;
+            accentLine.Dock = System.Windows.Forms.DockStyle.Left;
+            accentLine.BackColor = accentRed;
+            headerPanel.Controls.Add(accentLine);
+
+            // Title label
+            System.Windows.Forms.Label headerLabel = new System.Windows.Forms.Label();
+            headerLabel.Text = "  AERO-GCS: Advanced Setup & Calibration";
+            headerLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 11F, System.Drawing.FontStyle.Bold);
+            headerLabel.ForeColor = textWhite;
+            headerLabel.Dock = System.Windows.Forms.DockStyle.Fill;
+            headerLabel.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            headerPanel.Controls.Add(headerLabel);
+
+            // Bottom separator line
+            System.Windows.Forms.Panel separatorLine = new System.Windows.Forms.Panel();
+            separatorLine.Height = 1;
+            separatorLine.Dock = System.Windows.Forms.DockStyle.Bottom;
+            separatorLine.BackColor = borderColor;
+            headerPanel.Controls.Add(separatorLine);
+
+            this.Controls.Add(headerPanel);
+            headerPanel.BringToFront();
+
+            this.ResumeLayout(false);
         }
 
         #endregion

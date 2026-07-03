@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -67,58 +67,89 @@ namespace MissionPlanner.Controls.BackstageView
             }
 
            Graphics g = pevent.Graphics;
+           g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+           g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
 
-            // Now the little 'arrow' thingy if we are selected and the selected bg grad
+           // Determine the font to use
+           Font buttonFont;
+           try
+           {
+               buttonFont = new Font("Segoe UI", 9.5F * (100 / g.DpiX), _isSelected ? FontStyle.Bold : FontStyle.Regular);
+           }
+           catch
+           {
+               buttonFont = new Font(this.Font.FontFamily, 9.5F * (100 / g.DpiX), _isSelected ? FontStyle.Bold : FontStyle.Regular);
+           }
+
            if (_isSelected)
            {
-               //var rect1 = new Rectangle(0, 0, Width / 1, Height);
-               var rect2 = new Rectangle(0, 0, Width, Height);
+               // Fill with a subtle dark gradient for the selected state
+               var rect = new Rectangle(0, 0, Width, Height);
+               using (var bgBrush = new LinearGradientBrush(rect, HighlightColor2, Color.FromArgb(30, HighlightColor1), LinearGradientMode.Horizontal))
+               {
+                   g.FillRectangle(bgBrush, rect);
+               }
 
-              // g.FillRectangle(new LinearGradientBrush(rect1, HighlightColor1, HighlightColor2, LinearGradientMode.Horizontal), rect1);
-               g.FillRectangle(new LinearGradientBrush(rect2, HighlightColor2, HighlightColor1, LinearGradientMode.Horizontal), rect2);
+               // Left accent bar (red stripe)
+               int accentWidth = 3;
+               using (var accentBrush = new SolidBrush(HighlightColor1))
+               {
+                   g.FillRectangle(accentBrush, 0, 0, accentWidth, Height);
+               }
 
-               var butPen = new Pen(HighlightColor1);
-               g.DrawLine(butPen, 0, 0, Width, 0);
-               g.DrawLine(butPen, 0, Height - 1, Width, Height - 1);
+               // Top and bottom border lines
+               using (var linePen = new Pen(Color.FromArgb(60, HighlightColor1)))
+               {
+                   g.DrawLine(linePen, 0, 0, Width, 0);
+                   g.DrawLine(linePen, 0, Height - 1, Width, Height - 1);
+               }
+
+               // Selected text
+               g.DrawString(Text, buttonFont, new SolidBrush(SelectedTextColor), accentWidth + 8, (Height - buttonFont.GetHeight(g)) / 2);
+
+               // Right side arrow indicator
+               var pencilBrush = new Pen(this.PencilBorderColor);
+               g.DrawLine(pencilBrush, Width - 1, 0, Width - 1, Height - 1);
 
                var arrowBrush = new SolidBrush(this.ContentPageColor);
-
                var midheight = Height / 2;
-               var arSize = 8;
-
+               var arSize = 7;
                var arrowPoints = new[]
-                                     {
-                                         new Point(Width, midheight + arSize),
-                                         new Point(Width - arSize, midheight),
-                                         new Point(Width, midheight - arSize)
-                                     };
-
-               g.DrawString(Text, new Font(FontFamily.GenericSansSerif, 10 * (100 / g.DpiX), FontStyle.Bold), new SolidBrush(SelectedTextColor), 5, 6);
-
-               var pencilBrush = new Pen(this.PencilBorderColor);
-
-               g.DrawLine(pencilBrush, Width - 1, 0, Width - 1, Height - 1);
-               g.FillPolygon(arrowBrush, arrowPoints); 
-
+               {
+                   new Point(Width, midheight + arSize),
+                   new Point(Width - arSize, midheight),
+                   new Point(Width, midheight - arSize)
+               };
+               g.FillPolygon(arrowBrush, arrowPoints);
                g.DrawPolygon(pencilBrush, arrowPoints);
-
-               
            }
            else
            {
                if (_isMouseOver)
                {
-                   var brush = new SolidBrush(Color.FromArgb(10, 0xA0, 0xA0, 0xA0));
+                   // Subtle hover highlight
+                   using (var brush = new SolidBrush(Color.FromArgb(20, 255, 255, 255)))
+                   {
+                       g.FillRectangle(brush, this.ClientRectangle);
+                   }
 
-                   g.FillRectangle(brush, this.ClientRectangle);
+                   // Subtle left accent on hover
+                   using (var accentBrush = new SolidBrush(Color.FromArgb(80, HighlightColor1)))
+                   {
+                       g.FillRectangle(accentBrush, 0, 0, 2, Height);
+                   }
 
-                   var butPen = new Pen(PencilBorderColor);
-                   g.DrawLine(butPen, 0, 0, Width, 0);
-                   g.DrawLine(butPen, 0, Height - 1, Width, Height - 1);
+                   using (var butPen = new Pen(Color.FromArgb(40, PencilBorderColor)))
+                   {
+                       g.DrawLine(butPen, 0, 0, Width, 0);
+                       g.DrawLine(butPen, 0, Height - 1, Width, Height - 1);
+                   }
                }
-                
-                g.DrawString(Text, new Font(this.Font.FontFamily,10 * (100/g.DpiX), FontStyle.Bold), new SolidBrush(this.UnSelectedTextColor), 5, 6);
+
+               g.DrawString(Text, buttonFont, new SolidBrush(this.UnSelectedTextColor), 11, (Height - buttonFont.GetHeight(g)) / 2);
            }
+
+           buttonFont.Dispose();
         }
 
 

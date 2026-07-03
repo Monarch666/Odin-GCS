@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -224,13 +224,20 @@ namespace MissionPlanner.Controls.BackstageView
 
             if (haschild)
             {
-                label = ">> " + label;
+                // Category header - uppercase and prominent
+                label = label.ToUpperInvariant();
             }
             if (child)
             {
                 int count = label.Split('\n').Count();
-                label = "      " + label.Replace("\n", "\n      ");
+                label = "   " + label.Replace("\n", "\n   ");
                 heightextra = 15 * (count - 1);
+            }
+
+            // Add spacing before top-level items for visual separation
+            if (!child)
+            {
+                ButtonTopPos += 4;
             }
 
             var lnkButton = new BackstageViewButton
@@ -238,16 +245,14 @@ namespace MissionPlanner.Controls.BackstageView
                                     Text = label,
                                     Tag = page,
                                     Top = ButtonTopPos,
-                                    // Top = _items.TakeWhile(i => i != page).Sum(i => i.Spacing),
                                     Width = this.pnlMenu.Width,
-                                    Height = ButtonHeight + heightextra,
+                                    Height = (haschild ? ButtonHeight + 4 : ButtonHeight) + heightextra,
                                     ContentPageColor = this.BackColor,
                                     PencilBorderColor = _buttonsAreaPencilColor,
                                     SelectedTextColor = _selectedTextColor,
-                                    UnSelectedTextColor = _unSelectedTextColor,
+                                    UnSelectedTextColor = haschild ? Color.FromArgb(180, 180, 180) : _unSelectedTextColor,
                                     HighlightColor1 = _highlightColor1,
                                     HighlightColor2 = _highlightColor2,
-                                    //Dock = DockStyle.Bottom
                                 };
 
             pnlMenu.Controls.Add(lnkButton);

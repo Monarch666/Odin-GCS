@@ -5032,14 +5032,12 @@ namespace MissionPlanner
             CreateSidebarButton("CONFIG", "Config/Tuning", () => MenuTuning_Click(null, null));
             CreateSidebarButton("SETUP", "Initial Setup", () => MenuSetup_Click(null, null));
             CreateSidebarButton("PLAN", "Flight Planner", () => MenuFlightPlanner_Click(null, null));
-
+ 
             // Set DATA active by default
             Button btnData = CreateSidebarButton("DATA", "Flight Data", () => MenuFlightData_Click(null, null));
             activeButton = btnData;
-            btnData.BackColor = Color.FromArgb(240, 210, 210);
-            btnData.FlatAppearance.BorderColor = OdinTheme.Green;
-            btnData.FlatAppearance.BorderSize = 1;
-
+            btnData.Invalidate();
+ 
             // 8. Start status update timer
             sidebarTimer = new System.Windows.Forms.Timer();
             sidebarTimer.Interval = 200;
@@ -5066,7 +5064,7 @@ namespace MissionPlanner
             };
             sidebarTimer.Start();
         }
-
+ 
         private Button CreateToolbarButton(string symbol, Action onClick)
         {
             Button btn = new Button();
@@ -5075,17 +5073,17 @@ namespace MissionPlanner
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = OdinTheme.Panel;
             btn.ForeColor = OdinTheme.White;
-            btn.Font = new Font("Times New Roman", 14F, FontStyle.Bold);
+            btn.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
             btn.Text = symbol;
             btn.Click += (s, ev) => onClick();
             btn.Resize += (s, ev) => ApplyRoundedCorners(btn, 8);
-
+ 
             btn.MouseEnter += (s, ev) => btn.BackColor = OdinTheme.Panel2;
             btn.MouseLeave += (s, ev) => btn.BackColor = OdinTheme.Panel;
-
+ 
             return btn;
         }
-
+ 
         private Button CreateSidebarButton(string title, string shortcutKey, Action onClick)
         {
             Button btn = new Button();
@@ -5095,12 +5093,13 @@ namespace MissionPlanner
             btn.FlatAppearance.BorderSize = 0;
             btn.BackColor = OdinTheme.Panel;
             btn.ForeColor = OdinTheme.White;
-            btn.Font = new Font("Times New Roman", 12F, FontStyle.Bold);
+            btn.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             btn.TextAlign = ContentAlignment.MiddleLeft;
             btn.Padding = new Padding(15, 0, 15, 0);
-
+            btn.Text = ""; // Prevent standard text drawing
+ 
             btn.Resize += (s, ev) => ApplyRoundedCorners(btn, 12);
-
+ 
             btn.MouseEnter += (s, ev) => {
                 if (activeButton != btn)
                     btn.BackColor = OdinTheme.Panel2;
@@ -5109,42 +5108,71 @@ namespace MissionPlanner
                 if (activeButton != btn)
                     btn.BackColor = OdinTheme.Panel;
             };
-
+ 
             btn.Paint += (s, paintEv) => {
                 Graphics g = paintEv.Graphics;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-                using (Font shortcutFont = new Font("Times New Roman", 9.5F, FontStyle.Regular))
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+ 
+                bool isSelected = (activeButton == btn);
+ 
+                if (isSelected)
+                {
+                    var rect = new Rectangle(0, 0, btn.Width, btn.Height);
+                    using (var bgBrush = new System.Drawing.Drawing2D.LinearGradientBrush(
+                        rect, 
+                        Color.FromArgb(40, OdinTheme.Green),
+                        Color.FromArgb(10, OdinTheme.Green), 
+                        System.Drawing.Drawing2D.LinearGradientMode.Horizontal))
+                    {
+                        g.FillRectangle(bgBrush, rect);
+                    }
+ 
+                    using (var accentBrush = new SolidBrush(OdinTheme.Green))
+                    {
+                        g.FillRectangle(accentBrush, 0, 0, 4, btn.Height);
+                    }
+                }
+ 
+                using (Font textFont = new Font("Segoe UI", 10F, FontStyle.Bold))
+                using (Brush textBrush = new SolidBrush(isSelected ? Color.White : Color.FromArgb(180, 180, 180)))
+                {
+                    int textX = isSelected ? 22 : 18;
+                    g.DrawString(title, textFont, textBrush, textX, (btn.Height - textFont.GetHeight(g)) / 2);
+                }
+ 
+                using (Font shortcutFont = new Font("Segoe UI", 9F, FontStyle.Regular))
                 using (Brush shortcutBrush = new SolidBrush(Color.FromArgb(120, 120, 120)))
                 {
                     SizeF size = g.MeasureString(shortcutKey, shortcutFont);
                     g.DrawString(shortcutKey, shortcutFont, shortcutBrush, btn.Width - size.Width - 15, (btn.Height - size.Height) / 2);
                 }
             };
-
+ 
             btn.Click += (s, ev) => {
-                if (activeButton != null)
-                {
-                    activeButton.BackColor = OdinTheme.Panel;
-                    activeButton.FlatAppearance.BorderSize = 0;
-                }
-
+                var oldActive = activeButton;
                 activeButton = btn;
-                btn.BackColor = Color.FromArgb(240, 210, 210);
-                btn.FlatAppearance.BorderColor = OdinTheme.Green;
-                btn.FlatAppearance.BorderSize = 1;
-
+ 
+                if (oldActive != null)
+                {
+                    oldActive.BackColor = OdinTheme.Panel;
+                    oldActive.Invalidate();
+                }
+ 
+                btn.BackColor = OdinTheme.Panel;
+                btn.Invalidate();
+ 
                 onClick();
             };
-
+ 
             Panel spacer = new Panel();
             spacer.Height = 10;
             spacer.Dock = DockStyle.Top;
             spacer.BackColor = Color.Transparent;
-
+ 
             sidebar.Controls.Add(spacer);
             sidebar.Controls.Add(btn);
-
+ 
             return btn;
         }
     }

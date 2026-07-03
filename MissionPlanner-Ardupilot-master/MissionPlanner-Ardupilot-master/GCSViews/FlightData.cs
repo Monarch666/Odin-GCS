@@ -6881,6 +6881,7 @@ namespace MissionPlanner.GCSViews
         private void Hud_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
+            g.Clear(hud.Parent != null ? hud.Parent.BackColor : Color.FromArgb(20, 20, 20));
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
             int size = Math.Min(hud.Width, hud.Height) - 40;

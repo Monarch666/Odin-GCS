@@ -1,4 +1,4 @@
-﻿using MissionPlanner.Controls;
+using MissionPlanner.Controls;
 using MissionPlanner.Utilities;
 using System;
 using System.Collections.Generic;
@@ -6,10 +6,11 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Color = System.Drawing.Color;
+using System.Drawing;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
+    [PreventTheming]
     public partial class ConfigHWCompass2 : MyUserControl, IActivate, IDeactivate
     {
         private List<CompassDeviceInfo> list;
@@ -21,6 +22,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         private int packetsub1;
         private int packetsub2;
+
+        private Panel pnlHorizonContainer;
+        private Label lblHorizonTitle;
+        private Label lblHorizonSubtitle;
+        private Panel pnlLeft;
+        private Panel pnlMiddle;
+        private Panel pnlRight;
 
         public class CompassDeviceInfo : DeviceInfo
         {
@@ -85,14 +93,59 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
+            this.Controls.Clear();
+            if (pnlHorizonContainer == null)
+            {
+                CreateHorizonLayout();
+            }
+            this.Controls.Add(pnlHorizonContainer);
+
+            // Apply Odin theme styling
+            this.BackColor = Theme.Background;
+            this.ForeColor = Theme.OnSurface;
+            StyleHelper.ApplyThemeRecursive(this);
+
+            StyleHelper.ApplyLabelStyle(label6, Theme.HeaderFont, Theme.White);
+            StyleHelper.ApplyLabelStyle(label1, Theme.SubtitleFont, Theme.GreyText);
+            StyleHelper.ApplyLabelStyle(label3, Theme.FontTitle, Theme.White);
+            StyleHelper.ApplyLabelStyle(label4, Theme.FontBodySmall, Theme.GreyText);
+            StyleHelper.ApplyLabelStyle(label5, Theme.FontBodySmall, Theme.Tertiary);
+            StyleHelper.ApplyLabelStyle(label10, Theme.FontBody, Theme.OnSurface);
+            StyleHelper.ApplyLabelStyle(label7, Theme.FontBody, Theme.OnSurface);
+            StyleHelper.ApplyLabelStyle(label8, Theme.FontBody, Theme.OnSurface);
+            StyleHelper.ApplyLabelStyle(label9, Theme.FontBody, Theme.OnSurface);
+            StyleHelper.ApplyLabelStyle(label2, Theme.FontBodySmall, Theme.GreyText);
+
+            StyleHelper.ApplyButtonStyle(but_missing, false);
+            StyleHelper.ApplyButtonStyle(but_reboot, false);
+            StyleHelper.ApplyButtonStyle(but_largemagcal, false);
+            StyleHelper.ApplyButtonStyle(BUT_OBmagcalstart, true);
+            StyleHelper.ApplyButtonStyle(BUT_OBmagcalaccept, true);
+            StyleHelper.ApplyDangerButtonStyle(BUT_OBmagcalcancel);
+
+            StyleHelper.ApplyDataGridStyle(myDataGridView1);
+            groupBoxonboardcalib.BackColor = Theme.SurfaceContainer;
+            groupBoxonboardcalib.ForeColor = Theme.OnSurface;
+            groupBoxonboardcalib.FlatStyle = FlatStyle.Flat;
+            StyleHelper.ApplyTextBoxStyle(lbl_obmagresult);
+            groupBox5.Visible = false;
+
+            mavlinkCheckBoxUseCompass1.ForeColor = Theme.OnSurface;
+            mavlinkCheckBoxUseCompass2.ForeColor = Theme.OnSurface;
+            mavlinkCheckBoxUseCompass3.ForeColor = Theme.OnSurface;
+            CHK_compass_learn.ForeColor = Theme.OnSurface;
+
+            LayoutHorizon();
+
             // COMPASS_DEV_ID get a list of all connected devices
-            list = MainV2.comPort.MAV.param.Where(a => a.Name.StartsWith("COMPASS") && a.Name.Contains("DEV_ID") && a.Value != 0)
-                .Select((a, b) => new CompassDeviceInfo(b, a.Name, (uint) a.Value))
+            Dictionary<string, double> paramDict = MainV2.comPort.MAV.param;
+            list = paramDict.Where(a => a.Key.StartsWith("COMPASS") && a.Key.Contains("DEV_ID") && a.Value != 0)
+                .Select((a, b) => new CompassDeviceInfo(b, a.Key, (uint) a.Value))
                 .OrderBy((a) => a.ParamName).ToList();
 
             // COMPASS_PRIO get a list of all prios
-            var prio = MainV2.comPort.MAV.param.Where(a => a.Name.StartsWith("COMPASS_PRIO") && a.Value != 0)
-                .Select((a, b) => new CompassDeviceInfo(b, a.Name, (uint)a.Value))
+            var prio = paramDict.Where(a => a.Key.StartsWith("COMPASS_PRIO") && a.Value != 0)
+                .Select((a, b) => new CompassDeviceInfo(b, a.Key, (uint)a.Value))
                 .OrderBy((a) => a.ParamName).ToList();
 
             var anymissing = false;
@@ -128,14 +181,16 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             CHK_compass_learn.setup(1, 0, "COMPASS_LEARN", MainV2.comPort.MAV.param);
 
             {
-                // set the default items
                 var orient_param = MainV2.comPort.MAV.param[new[] { "COMPASS_ORIENT", "COMPASS1_ORIENT"}];
-                var source = ParameterMetaDataRepository.GetParameterOptionsInt(orient_param.Name,
-                        MainV2.comPort.MAV.cs.firmware.ToString())
-                    .Select(a => new KeyValuePair<string, string>(a.Key.ToString(), a.Value)).ToList();
-                Orientation.DataSource = source;
-                Orientation.DisplayMember = "Value";
-                Orientation.ValueMember = "Key";
+                if (orient_param != null)
+                {
+                    var source = ParameterMetaDataRepository.GetParameterOptionsInt(orient_param.Name,
+                            MainV2.comPort.MAV.cs.firmware.ToString())
+                        .Select(a => new KeyValuePair<string, string>(a.Key.ToString(), a.Value)).ToList();
+                    Orientation.DataSource = source;
+                    Orientation.DisplayMember = "Value";
+                    Orientation.ValueMember = "Key";
+                }
             }
 
             if (anymissing)
@@ -529,6 +584,149 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
 
             await UpdateFirst3();
+        }
+
+        private void CreateHorizonLayout()
+        {
+            pnlHorizonContainer = new Panel();
+            pnlHorizonContainer.BackColor = Theme.Background;
+            pnlHorizonContainer.ForeColor = Theme.White;
+
+            // Title
+            lblHorizonTitle = new Label();
+            lblHorizonTitle.Text = "Compass Setup & Priority";
+            StyleHelper.ApplyLabelStyle(lblHorizonTitle, Theme.HeaderFont, Theme.White);
+            lblHorizonTitle.AutoSize = true;
+            pnlHorizonContainer.Controls.Add(lblHorizonTitle);
+
+            // Subtitle
+            lblHorizonSubtitle = new Label();
+            lblHorizonSubtitle.Text = "Configure magnetometer priorities, enable/disable compasses, and run onboard calibration.";
+            StyleHelper.ApplyLabelStyle(lblHorizonSubtitle, Theme.SubtitleFont, Theme.GreyText);
+            lblHorizonSubtitle.AutoSize = true;
+            pnlHorizonContainer.Controls.Add(lblHorizonSubtitle);
+
+            // Left Panel (Priority)
+            pnlLeft = new Panel();
+            StyleHelper.ApplyPanelStyle(pnlLeft, "Compass Priority", "DEV_PRIORITY");
+            pnlHorizonContainer.Controls.Add(pnlLeft);
+
+            pnlLeft.Controls.Add(label1);
+            pnlLeft.Controls.Add(myDataGridView1);
+            pnlLeft.Controls.Add(but_missing);
+            pnlLeft.Controls.Add(but_reboot);
+            pnlLeft.Controls.Add(label5);
+
+            // Middle Panel (Calibration)
+            pnlMiddle = new Panel();
+            StyleHelper.ApplyPanelStyle(pnlMiddle, "Onboard Calibration", "CALIB_STATUS");
+            pnlHorizonContainer.Controls.Add(pnlMiddle);
+
+            pnlMiddle.Controls.Add(groupBoxonboardcalib);
+            groupBoxonboardcalib.BackColor = Color.Transparent;
+            groupBoxonboardcalib.ForeColor = Theme.OnSurface;
+            groupBoxonboardcalib.Text = ""; // Clear text to avoid double headers
+
+            pnlMiddle.Controls.Add(label3);
+            pnlMiddle.Controls.Add(mavlinkCheckBoxUseCompass1);
+            pnlMiddle.Controls.Add(mavlinkCheckBoxUseCompass2);
+            pnlMiddle.Controls.Add(mavlinkCheckBoxUseCompass3);
+            pnlMiddle.Controls.Add(CHK_compass_learn);
+
+            // Right Panel (Logs & Large Magcal)
+            pnlRight = new Panel();
+            StyleHelper.ApplyPanelStyle(pnlRight, "Calibration Logs", "LOGS_ACTIONS");
+            pnlHorizonContainer.Controls.Add(pnlRight);
+
+            pnlRight.Controls.Add(lbl_obmagresult);
+            pnlRight.Controls.Add(label4);
+            pnlRight.Controls.Add(but_largemagcal);
+
+            pnlHorizonContainer.Resize += (s, e) => LayoutHorizon();
+            LayoutHorizon();
+        }
+
+        private void LayoutHorizon()
+        {
+            if (pnlHorizonContainer == null) return;
+
+            pnlHorizonContainer.Bounds = this.ClientRectangle;
+
+            lblHorizonTitle.Location = new Point(20, 15);
+            lblHorizonSubtitle.Location = new Point(22, 45);
+
+            int startY = 110;
+            int colHeight = pnlHorizonContainer.Height - startY - 25;
+            if (colHeight < 200) colHeight = 200;
+
+            int colWidth = (pnlHorizonContainer.Width - 60) / 3;
+            if (colWidth < 200) colWidth = 200;
+
+            pnlLeft.Bounds = new Rectangle(20, startY, colWidth, colHeight);
+            pnlMiddle.Bounds = new Rectangle(20 + colWidth + 10, startY, colWidth, colHeight);
+            pnlRight.Bounds = new Rectangle(20 + (colWidth + 10) * 2, startY, colWidth, colHeight);
+
+            // --- Layout Left Panel Child Controls ---
+            label1.Location = new Point(16, 45);
+            label1.Width = pnlLeft.Width - 32;
+
+            myDataGridView1.Location = new Point(16, 80);
+            myDataGridView1.Size = new Size(pnlLeft.Width - 32, Math.Max(100, colHeight - 200));
+
+            label5.Location = new Point(16, myDataGridView1.Bottom + 12);
+            label5.Width = pnlLeft.Width - 32;
+
+            but_missing.Location = new Point(16, label5.Bottom + 8);
+            but_reboot.Location = new Point(but_missing.Right + 12, label5.Bottom + 8);
+
+            // --- Layout Middle Panel Child Controls ---
+            label3.Location = new Point(16, 45);
+            label3.Width = pnlMiddle.Width - 32;
+
+            mavlinkCheckBoxUseCompass1.Location = new Point(16, 80);
+            mavlinkCheckBoxUseCompass2.Location = new Point(16, 102);
+            mavlinkCheckBoxUseCompass3.Location = new Point(16, 124);
+            CHK_compass_learn.Location = new Point(16, 146);
+
+            // Onboard calibration box
+            groupBoxonboardcalib.Bounds = new Rectangle(10, 175, pnlMiddle.Width - 20, Math.Max(200, colHeight - 190));
+            
+            // Layout inside Onboard Calibration GroupBox
+            BUT_OBmagcalstart.Location = new Point(6, 20);
+            BUT_OBmagcalaccept.Location = new Point(BUT_OBmagcalstart.Right + 8, 20);
+            BUT_OBmagcalcancel.Location = new Point(BUT_OBmagcalaccept.Right + 8, 20);
+
+            label7.Location = new Point(6, 62);
+            horizontalProgressBar1.Location = new Point(50, 58);
+            horizontalProgressBar1.Width = groupBoxonboardcalib.Width - 90;
+            pictureBox1.Location = new Point(horizontalProgressBar1.Right + 8, 58);
+
+            label8.Location = new Point(6, 92);
+            horizontalProgressBar2.Location = new Point(50, 88);
+            horizontalProgressBar2.Width = groupBoxonboardcalib.Width - 90;
+            pictureBox2.Location = new Point(horizontalProgressBar2.Right + 8, 88);
+
+            label9.Location = new Point(6, 122);
+            horizontalProgressBar3.Location = new Point(50, 118);
+            horizontalProgressBar3.Width = groupBoxonboardcalib.Width - 90;
+            pictureBox3.Location = new Point(horizontalProgressBar3.Right + 8, 118);
+
+            label10.Location = new Point(6, 155);
+            mavlinkComboBoxfitness.Location = new Point(57, 151);
+            mavlinkComboBoxfitness.Width = Math.Max(100, groupBoxonboardcalib.Width - 75);
+
+            label2.Location = new Point(6, 185);
+            label2.Width = groupBoxonboardcalib.Width - 12;
+
+            // --- Layout Right Panel Child Controls ---
+            lbl_obmagresult.Location = new Point(16, 45);
+            lbl_obmagresult.Size = new Size(pnlRight.Width - 32, Math.Max(100, colHeight - 160));
+
+            label4.Location = new Point(16, lbl_obmagresult.Bottom + 12);
+            label4.Width = pnlRight.Width - 32;
+
+            but_largemagcal.Location = new Point(16, label4.Bottom + 8);
+            but_largemagcal.Width = pnlRight.Width - 32;
         }
     }
 }

@@ -1091,12 +1091,7 @@ namespace MissionPlanner
                 this.Icon = Icon.FromHandle(((Bitmap) Program.IconFile).GetHicon());
             }
 
-            MenuArduPilot.Image = new Bitmap(Properties.Resources._0d92fed790a3a70170e61a86db103f399a595c70,
-                (int) (200), 31);
-            MenuArduPilot.Width = MenuArduPilot.Image.Width;
 
-            if (Program.Logo2 != null)
-                MenuArduPilot.Image = Program.Logo2;
 
             Application.DoEvents();
 
@@ -1320,6 +1315,12 @@ namespace MissionPlanner
             MyView.ShowScreen("FlightPlanner");
 
             // save config
+            SaveConfig();
+        }
+
+        private void MenuFirmware_Click(object sender, EventArgs e)
+        {
+            MyView.ShowScreen("FirmwareSetup");
             SaveConfig();
         }
 
@@ -3178,6 +3179,7 @@ namespace MissionPlanner
             MyView.AddScreen(new MainSwitcher.Screen("FlightData", FlightData, true));
             MyView.AddScreen(new MainSwitcher.Screen("FlightPlanner", FlightPlanner, true));
             MyView.AddScreen(new MainSwitcher.Screen("HWConfig", typeof(GCSViews.InitialSetup), false));
+            MyView.AddScreen(new MainSwitcher.Screen("FirmwareSetup", typeof(GCSViews.FirmwareSetup), false));
             MyView.AddScreen(new MainSwitcher.Screen("SWConfig", typeof(GCSViews.SoftwareConfig), false));
             MyView.AddScreen(new MainSwitcher.Screen("Simulation", Simulation, true));
             MyView.AddScreen(new MainSwitcher.Screen("Help", typeof(GCSViews.Help), false));
@@ -4684,17 +4686,7 @@ namespace MissionPlanner
             new ConnectionOptions().Show(this);
         }
 
-        private void MenuArduPilot_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                System.Diagnostics.Process.Start("https://ardupilot.org/?utm_source=Menu&utm_campaign=MP");
-            }
-            catch
-            {
-                CustomMessageBox.Show("Failed to open url https://ardupilot.org");
-            }
-        }
+
 
         private void connectionListToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -5027,10 +5019,14 @@ namespace MissionPlanner
             sidebar.Controls.Add(toolSpacer);
 
             // 7. Add View switcher cards (added bottom-to-top to dock correctly top-to-bottom)
+            Button btnOptions = null;
+            btnOptions = CreateSidebarButton("OPTIONS", "Options", () => {
+                CTX_mainmenu.Show(btnOptions, new Point(btnOptions.Width, 0));
+            });
             CreateSidebarButton("HELP", "Help", () => MenuHelp_Click(null, null));
-            CreateSidebarButton("SIMULATION", "Simulation", () => MenuSimulation_Click(null, null));
             CreateSidebarButton("CONFIG", "Config/Tuning", () => MenuTuning_Click(null, null));
-            CreateSidebarButton("SETUP", "Initial Setup", () => MenuSetup_Click(null, null));
+            CreateSidebarButton("HARDWARE & FIRMWARE", "", () => MenuFirmware_Click(null, null));
+            CreateSidebarButton("CALIBRATION", "Calibration", () => MenuSetup_Click(null, null));
             CreateSidebarButton("PLAN", "Flight Planner", () => MenuFlightPlanner_Click(null, null));
  
             // Set DATA active by default
@@ -5087,6 +5083,7 @@ namespace MissionPlanner
         private Button CreateSidebarButton(string title, string shortcutKey, Action onClick)
         {
             Button btn = new Button();
+            btn.Name = "btn_" + title.Replace(" & ", "_").Replace(" ", "_").Replace("/", "_").Replace("&", "_");
             btn.Height = 55;
             btn.Dock = DockStyle.Top;
             btn.FlatStyle = FlatStyle.Flat;

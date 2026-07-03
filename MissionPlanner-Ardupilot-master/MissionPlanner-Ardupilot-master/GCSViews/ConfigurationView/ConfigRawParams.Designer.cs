@@ -359,51 +359,52 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             this.SuspendLayout();
 
-            this.BackColor = System.Drawing.Color.FromArgb(238, 238, 238); // #EEEEEE
-            this.Font = new System.Drawing.Font("Times New Roman", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.BackColor = System.Drawing.Color.FromArgb(10, 12, 14); // #0A0C0E Deep background
+            this.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
 
             tableLayoutPanel1.Visible = false;
 
             System.Windows.Forms.Panel topBar = new System.Windows.Forms.Panel();
-            topBar.Height = 65;
+            topBar.Height = 75; // Increased height for vertical spacing
             topBar.Dock = System.Windows.Forms.DockStyle.Top;
-            topBar.BackColor = System.Drawing.Color.FromArgb(221, 221, 221); // #DDDDDD
+            topBar.BackColor = System.Drawing.Color.FromArgb(26, 29, 33); // #1A1D21 Surface Panel
             topBar.Padding = new System.Windows.Forms.Padding(10);
             this.Controls.Add(topBar);
             topBar.BringToFront();
 
             System.Windows.Forms.Label lblSearch = new System.Windows.Forms.Label();
             lblSearch.Text = "Search:";
-            lblSearch.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0); // #000000
-            lblSearch.Font = new System.Drawing.Font("Times New Roman", 10F, System.Drawing.FontStyle.Bold);
-            lblSearch.Location = new System.Drawing.Point(15, 23);
+            lblSearch.ForeColor = System.Drawing.Color.FromArgb(226, 226, 225); // #E2E2E5
+            lblSearch.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
+            lblSearch.Location = new System.Drawing.Point(15, 27);
             lblSearch.AutoSize = true;
             topBar.Controls.Add(lblSearch);
 
             txt_search.Parent = topBar;
             txt_search.Size = new System.Drawing.Size(200, 25);
-            txt_search.Location = new System.Drawing.Point(70, 20);
-            txt_search.BackColor = System.Drawing.Color.FromArgb(238, 238, 238); // #EEEEEE
-            txt_search.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0); // #000000
-            txt_search.Font = new System.Drawing.Font("Times New Roman", 10F, System.Drawing.FontStyle.Regular);
+            txt_search.Location = new System.Drawing.Point(75, 24);
+            txt_search.BackColor = System.Drawing.Color.FromArgb(51, 53, 55); // #333537 Dark text box
+            txt_search.ForeColor = System.Drawing.Color.FromArgb(226, 226, 225); // #E2E2E5
+            txt_search.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Regular);
+            txt_search.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
 
             chk_modified.Parent = topBar;
-            chk_modified.Location = new System.Drawing.Point(285, 20);
+            chk_modified.Location = new System.Drawing.Point(295, 26);
             chk_modified.AutoSize = true;
-            chk_modified.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
-            chk_modified.Font = new System.Drawing.Font("Times New Roman", 9.5F, System.Drawing.FontStyle.Regular);
+            chk_modified.ForeColor = System.Drawing.Color.FromArgb(185, 204, 178); // #B9CCB2 Muted text
+            chk_modified.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Regular);
 
             chk_none_default.Parent = topBar;
-            chk_none_default.Location = new System.Drawing.Point(380, 20);
+            chk_none_default.Location = new System.Drawing.Point(395, 26);
             chk_none_default.AutoSize = true;
-            chk_none_default.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
-            chk_none_default.Font = new System.Drawing.Font("Times New Roman", 9.5F, System.Drawing.FontStyle.Regular);
+            chk_none_default.ForeColor = System.Drawing.Color.FromArgb(185, 204, 178); // #B9CCB2
+            chk_none_default.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Regular);
 
             System.Windows.Forms.FlowLayoutPanel buttonFlow = new System.Windows.Forms.FlowLayoutPanel();
             buttonFlow.Dock = System.Windows.Forms.DockStyle.Right;
             buttonFlow.Width = 650;
             buttonFlow.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
-            buttonFlow.Padding = new System.Windows.Forms.Padding(0, 5, 0, 0);
+            buttonFlow.Padding = new System.Windows.Forms.Padding(0, 12, 0, 0); // Center buttons vertically
             topBar.Controls.Add(buttonFlow);
 
             var buttons = new System.Collections.Generic.List<MyButton> { BUT_writePIDS, BUT_rerequestparams, BUT_compare, BUT_save, BUT_load };
@@ -413,57 +414,58 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 btn.Size = new System.Drawing.Size(110, 36);
                 btn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
                 btn.FlatAppearance.BorderSize = 0;
-                btn.Font = new System.Drawing.Font("Times New Roman", 9.5F, System.Drawing.FontStyle.Bold);
-                btn.ForeColor = System.Drawing.Color.FromArgb(238, 238, 238); // #EEEEEE
+                btn.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
                 btn.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
 
                 if (btn == BUT_writePIDS)
                 {
-                    btn.BackColor = System.Drawing.Color.FromArgb(203, 41, 87); // #CB2957
+                    btn.BackColor = System.Drawing.Color.FromArgb(0, 255, 65); // #00FF41 Matrix Green
+                    btn.ForeColor = System.Drawing.Color.Black; // Contrast black text
                 }
                 else
                 {
-                    btn.BackColor = System.Drawing.Color.FromArgb(0, 0, 0); // #000000
+                    btn.BackColor = System.Drawing.Color.FromArgb(38, 41, 46); // #26292E Panel secondary
+                    btn.ForeColor = System.Drawing.Color.FromArgb(226, 226, 225); // #E2E2E5
                 }
 
-                btn.MouseEnter += (s, ev) => btn.BackColor = (btn == BUT_writePIDS) ? System.Drawing.Color.FromArgb(230, 60, 110) : System.Drawing.Color.FromArgb(50, 50, 50);
-                btn.MouseLeave += (s, ev) => btn.BackColor = (btn == BUT_writePIDS) ? System.Drawing.Color.FromArgb(203, 41, 87) : System.Drawing.Color.FromArgb(0, 0, 0);
+                btn.MouseEnter += (s, ev) => btn.BackColor = (btn == BUT_writePIDS) ? System.Drawing.Color.FromArgb(0, 220, 55) : System.Drawing.Color.FromArgb(50, 55, 60);
+                btn.MouseLeave += (s, ev) => btn.BackColor = (btn == BUT_writePIDS) ? System.Drawing.Color.FromArgb(0, 255, 65) : System.Drawing.Color.FromArgb(38, 41, 46);
 
                 buttonFlow.Controls.Add(btn);
             }
 
             splitContainer1.Dock = System.Windows.Forms.DockStyle.Fill;
-            splitContainer1.BackColor = System.Drawing.Color.FromArgb(238, 238, 238);
+            splitContainer1.BackColor = System.Drawing.Color.FromArgb(10, 12, 14); // #0A0C0E
             splitContainer1.SplitterWidth = 6;
 
             treeView1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            treeView1.BackColor = System.Drawing.Color.FromArgb(0, 0, 0); // #000000
-            treeView1.ForeColor = System.Drawing.Color.FromArgb(238, 238, 238); // #EEEEEE
-            treeView1.Font = new System.Drawing.Font("Times New Roman", 10.5F, System.Drawing.FontStyle.Regular);
-            treeView1.LineColor = System.Drawing.Color.FromArgb(203, 41, 87); // #CB2957
+            treeView1.BackColor = System.Drawing.Color.FromArgb(10, 12, 14); // #0A0C0E
+            treeView1.ForeColor = System.Drawing.Color.FromArgb(226, 226, 225); // #E2E2E5
+            treeView1.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Regular);
+            treeView1.LineColor = System.Drawing.Color.FromArgb(0, 255, 65); // #00FF41 Matrix Green
 
             Params.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            Params.BackgroundColor = System.Drawing.Color.FromArgb(238, 238, 238);
-            Params.GridColor = System.Drawing.Color.FromArgb(221, 221, 221); // #DDDDDD
+            Params.BackgroundColor = System.Drawing.Color.FromArgb(10, 12, 14); // #0A0C0E
+            Params.GridColor = System.Drawing.Color.FromArgb(26, 29, 33); // #1A1D21
             Params.RowTemplate.Height = 32;
 
             Params.EnableHeadersVisualStyles = false;
             Params.ColumnHeadersHeight = 35;
-            Params.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(0, 0, 0); // #000000
-            Params.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(238, 238, 238);
-            Params.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Times New Roman", 10F, System.Drawing.FontStyle.Bold);
+            Params.ColumnHeadersDefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(26, 29, 33); // #1A1D21
+            Params.ColumnHeadersDefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(226, 226, 225); // #E2E2E5
+            Params.ColumnHeadersDefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Bold);
 
-            Params.DefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(238, 238, 238); // #EEEEEE
-            Params.DefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0); // #000000
-            Params.DefaultCellStyle.Font = new System.Drawing.Font("Times New Roman", 9.5F, System.Drawing.FontStyle.Regular);
-            Params.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(203, 41, 87); // #CB2957
-            Params.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.FromArgb(238, 238, 238);
+            Params.DefaultCellStyle.BackColor = System.Drawing.Color.FromArgb(10, 12, 14); // #0A0C0E
+            Params.DefaultCellStyle.ForeColor = System.Drawing.Color.FromArgb(226, 226, 225); // #E2E2E5
+            Params.DefaultCellStyle.Font = new System.Drawing.Font("Segoe UI", 9.5F, System.Drawing.FontStyle.Regular);
+            Params.DefaultCellStyle.SelectionBackColor = System.Drawing.Color.FromArgb(59, 75, 55); // #3B4B37 Technical Green
+            Params.DefaultCellStyle.SelectionForeColor = System.Drawing.Color.FromArgb(0, 255, 65); // #00FF41 Matrix Green
 
             but_collapse.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             but_collapse.FlatAppearance.BorderSize = 0;
-            but_collapse.BackColor = System.Drawing.Color.FromArgb(221, 221, 221);
-            but_collapse.ForeColor = System.Drawing.Color.FromArgb(0, 0, 0);
-            but_collapse.Font = new System.Drawing.Font("Times New Roman", 8F, System.Drawing.FontStyle.Bold);
+            but_collapse.BackColor = System.Drawing.Color.FromArgb(26, 29, 33); // #1A1D21
+            but_collapse.ForeColor = System.Drawing.Color.FromArgb(185, 204, 178); // #B9CCB2
+            but_collapse.Font = new System.Drawing.Font("Segoe UI", 8F, System.Drawing.FontStyle.Bold);
             but_collapse.Size = new System.Drawing.Size(15, 60);
 
             splitContainer1.BringToFront();

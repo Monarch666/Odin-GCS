@@ -532,6 +532,9 @@
     <Compile Update="GCSViews\InitialSetup.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Update="GCSViews\FirmwareSetup.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Update="GCSViews\SoftwareConfig.cs">
       <SubType>UserControl</SubType>
     </Compile>

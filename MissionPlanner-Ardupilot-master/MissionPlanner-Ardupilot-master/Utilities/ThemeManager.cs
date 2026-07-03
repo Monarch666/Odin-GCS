@@ -61,40 +61,42 @@ namespace MissionPlanner.Utilities
         }
         public void InitColors()
         {
-            iconSet = IconSet.BurnKermitIconSet;
+            iconSet = IconSet.HighContrastIconSet;
             terminalTheming = true;
-            strThemeName = "BurntKermit.mpsystheme";
+            strThemeName = "ApexControl.mpsystheme";
 
-            colors.Add("Background", Color.FromArgb(0x26, 0x27, 0x28), "BGColor");						// This changes the colour of the main menu background
-            colors.Add("Control Background", Color.FromArgb(0x43, 0x44, 0x45), "ControlBGColor");		// This changes the colour of the sub menu backgrounds
-            colors.Add("Text", Color.White, "TextColor");										// This changes the colour of text
-            colors.Add("TextBox Background", Color.FromArgb(0x43, 0x44, 0x45), "BGColorTextBox");		// This changes the colour of the background of textboxes
-            colors.Add("Button Text", Color.FromArgb(64, 87, 4), "ButtonTextColor");				// This changes the colour of button text
-            colors.Add("Button Background top", Color.FromArgb(148, 193, 31), "ButBG");								// This changes the colour of button backgrounds (Top)
-            colors.Add("Button Background bottom", Color.FromArgb(205, 226, 150), "ButBGBot");						// This changes the colour of button backgrounds (Bot)
-            colors.Add("ProgressBar Top", Color.FromArgb(102, 139, 26), "ProgressBarColorTop");	// These three variables change the colours of progress bars
-            colors.Add("ProgressBar Bottom", Color.FromArgb(124, 164, 40), "ProgressBarColorBot");
-            colors.Add("ProgressBar Outline", Color.FromArgb(150, 174, 112), "ProgressBarOutlineColor");
-            colors.Add("BannerColor1", Color.FromArgb(0x40, 0x57, 0x04), "BannerColor1");			// These two variables change the colours of banners such as "planner" umder configuration
-            colors.Add("BannerColor2", Color.FromArgb(0x94, 0xC1, 0x1F), "BannerColor2");
-            colors.Add("Disabled Button", Color.FromArgb(150, 43, 58, 3), "ColorNotEnabled");		// This changes the background color of buttons when not enabled
-            colors.Add("Button Mouseover", Color.FromArgb(73, 43, 58, 3), "ColorMouseOver");			// This changes the background color of buttons when the mouse is hovering over a button
-            colors.Add("Button Mousedown", Color.FromArgb(73, 43, 58, 3), "ColorMouseDown");			// This changes the background color of buttons when the mouse is clicked down on a button
-            colors.Add("CurrentPPM Background", Color.Green, "CurrentPPMBackground");					// This changes the background colour of the current PPM setting in the flight modes tab
-            colors.Add("Graph Chart Fill", Color.FromArgb(0x1F, 0x1F, 0x20), "ZedGraphChartFill"); 	// These three variables change the fill colours of Zed Graphs
-            colors.Add("Graph Pane Fill", Color.FromArgb(0x37, 0x37, 0x38), "ZedGraphPaneFill");
-            colors.Add("Graph Legend Fill", Color.FromArgb(0x85, 0x84, 0x83), "ZedGraphLegendFill");
-            colors.Add("Rich Text Box text", Color.WhiteSmoke, "RTBForeColor");							// This changes the colour of text in rich text boxes
-            colors.Add("BackStageView Button Area", Color.Black, "BSVButtonAreaBGColor");					// This changes the colour of a backstageview button area
-            colors.Add("BSV Unselected Text", Color.WhiteSmoke, "UnselectedTextColour");			// This changes the colour of unselected text in a BSV button
-            colors.Add("Horizontal ProgressBar", Color.FromArgb(148, 193, 31), "HorizontalPBValueColor"); // This changes the colour of the horizontal progressbar
-            colors.Add("HUD text and drawings", Color.LightGray, "HudText");                       
-            colors.Add("HUD Ground top", Color.FromArgb(0x9b, 0xb8, 0x24), "HudGroundTop");
-            colors.Add("HUD Ground bottom", Color.FromArgb(0x41, 0x4f, 0x07), "HudGroundBot");
-            colors.Add("HUD Sky top", Color.Blue, "HudSkyTop");
-            colors.Add("HUD Sky bottom", Color.LightBlue, "HudSkyBot");
+            // Apex Control Design System — Horizon GCS
+            colors.Add("Background", Color.FromArgb(0x0A, 0x0C, 0x0E), "BGColor");                     // #0A0C0E Deep void
+            colors.Add("Control Background", Color.FromArgb(0x1E, 0x20, 0x22), "ControlBGColor");       // #1E2022 Surface container
+            colors.Add("Text", Color.FromArgb(0xE2, 0xE2, 0xE5), "TextColor");                          // #E2E2E5 On-surface
+            colors.Add("TextBox Background", Color.FromArgb(0x33, 0x35, 0x37), "BGColorTextBox");        // #333537 Surface highest
+            colors.Add("Button Text", Color.FromArgb(0x00, 0x00, 0x00), "ButtonTextColor");              // Black on green buttons
+            colors.Add("Button Background top", Color.FromArgb(0x00, 0xFF, 0x41), "ButBG");              // #00FF41 Matrix Green
+            colors.Add("Button Background bottom", Color.FromArgb(0x00, 0xE6, 0x39), "ButBGBot");        // #00E639 Primary Dim
+            colors.Add("ProgressBar Top", Color.FromArgb(0x00, 0xE6, 0x39), "ProgressBarColorTop");     // Green progress
+            colors.Add("ProgressBar Bottom", Color.FromArgb(0x00, 0xFF, 0x41), "ProgressBarColorBot");
+            colors.Add("ProgressBar Outline", Color.FromArgb(0x3B, 0x4B, 0x37), "ProgressBarOutlineColor"); // #3B4B37 Outline variant
+            colors.Add("BannerColor1", Color.FromArgb(0x1E, 0x20, 0x22), "BannerColor1");               // Surface container
+            colors.Add("BannerColor2", Color.FromArgb(0x28, 0x2A, 0x2C), "BannerColor2");               // Surface container high
+            colors.Add("Disabled Button", Color.FromArgb(150, 0x33, 0x35, 0x37), "ColorNotEnabled");    // Dimmed surface
+            colors.Add("Button Mouseover", Color.FromArgb(80, 0x00, 0xFF, 0x41), "ColorMouseOver");     // Green glow hover
+            colors.Add("Button Mousedown", Color.FromArgb(120, 0x00, 0xE6, 0x39), "ColorMouseDown");    // Green press
+            colors.Add("CurrentPPM Background", Color.FromArgb(0x00, 0xFF, 0x41), "CurrentPPMBackground"); // Matrix Green
+            colors.Add("Graph Chart Fill", Color.FromArgb(0x0A, 0x0C, 0x0E), "ZedGraphChartFill");      // Deep void
+            colors.Add("Graph Pane Fill", Color.FromArgb(0x1E, 0x20, 0x22), "ZedGraphPaneFill");        // Surface container
+            colors.Add("Graph Legend Fill", Color.FromArgb(0x28, 0x2A, 0x2C), "ZedGraphLegendFill");     // Surface container high
+            colors.Add("Rich Text Box text", Color.FromArgb(0xE2, 0xE2, 0xE5), "RTBForeColor");         // On-surface
+            colors.Add("BackStageView Button Area", Color.FromArgb(0x12, 0x14, 0x16), "BSVButtonAreaBGColor"); // #121416 Surface dim
+            colors.Add("BSV Unselected Text", Color.FromArgb(0xB9, 0xCC, 0xB2), "UnselectedTextColour"); // #B9CCB2 On-surface-variant
+            colors.Add("Horizontal ProgressBar", Color.FromArgb(0x00, 0xFF, 0x41), "HorizontalPBValueColor"); // Matrix Green
+            colors.Add("HUD text and drawings", Color.FromArgb(0x00, 0xFF, 0x41), "HudText");           // Green HUD text
+            colors.Add("HUD Ground top", Color.FromArgb(0x1E, 0x20, 0x22), "HudGroundTop");             // Dark ground
+            colors.Add("HUD Ground bottom", Color.FromArgb(0x0A, 0x0C, 0x0E), "HudGroundBot");          // Deeper ground
+            colors.Add("HUD Sky top", Color.FromArgb(0x12, 0x14, 0x16), "HudSkyTop");                   // Dark sky
+            colors.Add("HUD Sky bottom", Color.FromArgb(0x1E, 0x20, 0x22), "HudSkyBot");                // Mid sky
 
         }
+
 
         public void SetTheme()
         {
@@ -161,10 +163,10 @@ namespace MissionPlanner.Utilities
         private static readonly ILog log =
             LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        // Initialize to the default theme (BurntKermit)
-        public static Color BGColor = Color.FromArgb(0x26, 0x27, 0x28);
-        public static Color ControlBGColor = Color.FromArgb(0x43, 0x44, 0x45);
-        public static Color TextColor = Color.White;
+        // Initialize to the Apex Control theme
+        public static Color BGColor = Color.FromArgb(0x0A, 0x0C, 0x0E);           // #0A0C0E
+        public static Color ControlBGColor = Color.FromArgb(0x1E, 0x20, 0x22);    // #1E2022
+        public static Color TextColor = Color.FromArgb(0xE2, 0xE2, 0xE5);         // #E2E2E5
         public static Color BGColorTextBox;
         public static Color ButBG;
         public static Color ButBGBot;
@@ -194,7 +196,7 @@ namespace MissionPlanner.Utilities
         public static Color HudSkyBot;
 
         // Custom font override for the entire application
-        public static Font AppFont = new Font("Times New Roman", 8.25F, FontStyle.Regular);
+        public static Font AppFont = new Font("Segoe UI", 8.25F, FontStyle.Regular);
 
         public static ThemeColorTable thmColor;
 
@@ -1131,12 +1133,12 @@ mc:Ignorable=""d""
                     var bsv = ctl as BackstageView;
 
                     bsv.BackColor = BGColor;
-                    bsv.ButtonsAreaBgColor = isOdinSetup ? Color.FromArgb(20, 22, 26) : ControlBGColor;
-                    bsv.HighlightColor2 = isOdinSetup ? Color.FromArgb(140, 0, 0) : Color.FromArgb(0x94, 0xc1, 0x1f);
-                    bsv.HighlightColor1 = isOdinSetup ? Color.FromArgb(204, 0, 0) : Color.FromArgb(0x40, 0x57, 0x04);
+                    bsv.ButtonsAreaBgColor = isOdinSetup ? Color.FromArgb(18, 20, 22) : ControlBGColor;
+                    bsv.HighlightColor2 = isOdinSetup ? Color.FromArgb(0, 80, 20) : Color.FromArgb(0x94, 0xc1, 0x1f);
+                    bsv.HighlightColor1 = isOdinSetup ? Color.FromArgb(0, 255, 65) : Color.FromArgb(0x40, 0x57, 0x04);
                     bsv.SelectedTextColor = Color.White;
-                    bsv.UnSelectedTextColor = isOdinSetup ? Color.FromArgb(140, 140, 140) : Color.Gray;
-                    bsv.ButtonsAreaPencilColor = isOdinSetup ? Color.FromArgb(45, 45, 45) : Color.DarkGray;
+                    bsv.UnSelectedTextColor = isOdinSetup ? Color.FromArgb(185, 204, 178) : Color.Gray;
+                    bsv.ButtonsAreaPencilColor = isOdinSetup ? Color.FromArgb(59, 75, 55) : Color.DarkGray;
                 }
                 else if (ctl.GetType() == typeof(HorizontalProgressBar2) ||
                          ctl.GetType() == typeof(VerticalProgressBar2))
@@ -1180,6 +1182,7 @@ mc:Ignorable=""d""
             Color oldUnselectedTextColour = UnselectedTextColour;
             Color oldBannerColor1 = BannerColor1;
             Color oldBannerColor2 = BannerColor2;
+            Color oldBGColorTextBox = BGColorTextBox;
 
             bool isOdinSetup = IsInsideInitialSetup(temp);
             bool isDarkPanel = isOdinSetup || IsInsideFlightData(temp);
@@ -1192,9 +1195,10 @@ mc:Ignorable=""d""
                 ButBGBot = MainV2.OdinTheme.Panel;
                 ButBorder = MainV2.OdinTheme.Border;
                 BSVButtonAreaBGColor = MainV2.OdinTheme.Background; 
-                UnselectedTextColour = Color.FromArgb(140, 140, 140); // Dim gray
-                BannerColor1 = MainV2.OdinTheme.Green;
-                BannerColor2 = MainV2.OdinTheme.Green;
+                UnselectedTextColour = Color.FromArgb(185, 204, 178); // On-surface-variant
+                BannerColor1 = MainV2.OdinTheme.Green; // Matrix Green #00FF41
+                BannerColor2 = Color.FromArgb(0, 80, 20); // Darker green gradient color
+                BGColorTextBox = Color.FromArgb(51, 53, 55); // Dark text box #333537
             }
 
             if (level == 0)
@@ -1486,7 +1490,7 @@ mc:Ignorable=""d""
                     bsv.HighlightColor1 = BannerColor1;
                     bsv.SelectedTextColor = TextColor;
                     bsv.UnSelectedTextColor = UnselectedTextColour;
-                    bsv.ButtonsAreaPencilColor = isOdinSetup ? Color.FromArgb(45, 45, 45) : Color.DarkGray;
+                    bsv.ButtonsAreaPencilColor = isOdinSetup ? Color.FromArgb(59, 75, 55) : Color.DarkGray;
                 }
                 else if (ctl.GetType() == typeof(HorizontalProgressBar2) ||
                          ctl.GetType() == typeof(VerticalProgressBar2))
@@ -1524,6 +1528,7 @@ mc:Ignorable=""d""
                 UnselectedTextColour = oldUnselectedTextColour;
                 BannerColor1 = oldBannerColor1;
                 BannerColor2 = oldBannerColor2;
+                BGColorTextBox = oldBGColorTextBox;
             }
         }
 

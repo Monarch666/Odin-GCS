@@ -589,6 +589,16 @@ namespace MissionPlanner.Controls.BackstageView
             }
         }
 
+        public void Clear()
+        {
+            this.Close();
+            _items.Clear();
+            pnlMenu.Controls.Clear();
+            pnlPages.Controls.Clear();
+            _activePage = null;
+            ButtonTopPos = 0;
+        }
+
         private void BackstageView_Load(object sender, EventArgs e)
         {
             UpdateDisplay();

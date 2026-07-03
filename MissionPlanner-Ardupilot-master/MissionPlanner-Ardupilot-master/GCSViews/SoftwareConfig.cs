@@ -226,7 +226,7 @@ namespace MissionPlanner.GCSViews
                 if (MainV2.DisplayConfiguration.displayFullParamList)
                 {
                     if(!MainV2.comPort.BaseStream.IsOpen || gotAllParams)
-                        AddBackstageViewPage(typeof(ConfigRawParams), Strings.FullParameterList, null, false);
+                        start = AddBackstageViewPage(typeof(ConfigRawParams), Strings.FullParameterList, null, false);
                 }
                 if (MainV2.comPort.BaseStream.IsOpen)
                 {

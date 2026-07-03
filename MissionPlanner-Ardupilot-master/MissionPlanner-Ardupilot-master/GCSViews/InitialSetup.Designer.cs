@@ -284,10 +284,8 @@ namespace MissionPlanner.GCSViews
             this.backstageView.ForeColor = textWhite;
             this.backstageView.ButtonsAreaBgColor = sidebarBg;
             this.backstageView.ButtonsAreaPencilColor = borderColor;
-            this.backstageView.SelectedTextColor = textWhite;
-            this.backstageView.UnSelectedTextColor = textDim;
             this.backstageView.HighlightColor1 = accentRed;
-            this.backstageView.HighlightColor2 = System.Drawing.Color.FromArgb(140, 0, 0); // darker red gradient
+            this.backstageView.HighlightColor2 = System.Drawing.Color.FromArgb(0, 80, 20); // darker green gradient
             this.backstageView.WidthMenu = 190;
 
             // Add a header panel above the backstageView
@@ -307,7 +305,7 @@ namespace MissionPlanner.GCSViews
 
             // Title label
             System.Windows.Forms.Label headerLabel = new System.Windows.Forms.Label();
-            headerLabel.Text = "  AERO-GCS: Advanced Setup & Calibration";
+            headerLabel.Text = "  AERO-GCS: Advanced Setup Calibration";
             headerLabel.Font = new System.Drawing.Font("Segoe UI Semibold", 11F, System.Drawing.FontStyle.Bold);
             headerLabel.ForeColor = textWhite;
             headerLabel.Dock = System.Windows.Forms.DockStyle.Fill;

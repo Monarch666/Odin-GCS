@@ -798,8 +798,90 @@ mc:Ignorable=""d""
                 }
             }
         }
+        private static bool IsInsideInitialSetup(Control control)
+        {
+            Control p = control;
+            while (p != null)
+            {
+                Type type = p.GetType();
+                string ns = type.Namespace;
+                string name = type.Name;
+
+                if (name == "InitialSetup" || 
+                    name.StartsWith("ConfigHW") || 
+                    name.StartsWith("ConfigFirmware") || 
+                    name.StartsWith("ConfigAccel") || 
+                    name.StartsWith("ConfigRadio") || 
+                    name.StartsWith("ConfigESCCalibration") || 
+                    name.StartsWith("ConfigFlightModes") || 
+                    name.StartsWith("ConfigFrame") || 
+                    name.StartsWith("ConfigMandatory") || 
+                    name.StartsWith("ConfigTradHeli") || 
+                    name.StartsWith("ConfigBattery") || 
+                    name.StartsWith("ConfigDroneCAN") || 
+                    name.StartsWith("ConfigMount") || 
+                    name.StartsWith("ConfigMotorTest") || 
+                    name.StartsWith("ConfigFailSafe") || 
+                    name.StartsWith("ConfigInitialParams") || 
+                    name.StartsWith("ConfigHWIDs") || 
+                    name.StartsWith("ConfigGPSOrder") || 
+                    name.StartsWith("ConfigADSB") || 
+                    name.StartsWith("ConfigSecure") || 
+                    name.StartsWith("ConfigParamLoading") || 
+                    name.StartsWith("ConfigTerminal") || 
+                    name.StartsWith("ConfigREPL") || 
+                    name.StartsWith("ConfigSerial") || 
+                    name.StartsWith("ConfigCubeID") || 
+                    name.StartsWith("ConfigAntenna") || 
+                    name.StartsWith("ConfigFFT") || 
+                    name.StartsWith("ConfigOptional") || 
+                    name.StartsWith("ConfigHWBT") || 
+                    name.StartsWith("ConfigHWParachute") || 
+                    name.StartsWith("ConfigHWESP8266") ||
+                    name.Equals("Sikradio") ||
+                    name.Equals("JoystickSetup") ||
+                    name.Equals("TrackerUI"))
+                {
+                    return true;
+                }
+
+                if (ns != null && (ns.Contains("ConfigurationView") || ns.Contains("GCSViews")))
+                {
+                    if (!name.Equals("FlightData") && 
+                        !name.Equals("FlightPlanner") && 
+                        !name.Equals("MainV2") && 
+                        !name.Equals("Simulation") && 
+                        !name.Equals("Help"))
+                    {
+                        return true;
+                    }
+                }
+
+                p = p.Parent;
+            }
+            return false;
+        }
+
         private static void ApplyCustomTheme(Control temp, int level)
         {
+            Color oldBGColor = BGColor;
+            Color oldTextColor = TextColor;
+            Color oldControlBGColor = ControlBGColor;
+            Color oldButBG = ButBG;
+            Color oldButBGBot = ButBGBot;
+            Color oldButBorder = ButBorder;
+
+            bool isOdinSetup = IsInsideInitialSetup(temp);
+            if (isOdinSetup)
+            {
+                BGColor = Color.FromArgb(17, 18, 22);      // #111216
+                TextColor = Color.White;
+                ControlBGColor = Color.FromArgb(24, 26, 30);  // #181A1E
+                ButBG = Color.FromArgb(204, 0, 0);     // #CC0000
+                ButBGBot = Color.FromArgb(140, 0, 0);
+                ButBorder = Color.FromArgb(45, 45, 45);   // #2D2D2D
+            }
+
             if (level == 0)
             {
                 temp.BackColor = BGColor;
@@ -840,7 +922,7 @@ mc:Ignorable=""d""
                 }
                 else if (ctl.GetType() == typeof(MyLabel))
                 {
-                    ctl.BackColor = BGColor;
+                    ctl.BackColor = isOdinSetup ? Color.Transparent : BGColor;
                     ctl.ForeColor = TextColor;
                 }
                 else if (ctl.GetType() == typeof(Button))
@@ -1036,12 +1118,12 @@ mc:Ignorable=""d""
                     var bsv = ctl as BackstageView;
 
                     bsv.BackColor = BGColor;
-                    bsv.ButtonsAreaBgColor = ControlBGColor;
-                    bsv.HighlightColor2 = Color.FromArgb(0x94, 0xc1, 0x1f);
-                    bsv.HighlightColor1 = Color.FromArgb(0x40, 0x57, 0x04);
+                    bsv.ButtonsAreaBgColor = isOdinSetup ? Color.FromArgb(20, 22, 26) : ControlBGColor;
+                    bsv.HighlightColor2 = isOdinSetup ? Color.FromArgb(140, 0, 0) : Color.FromArgb(0x94, 0xc1, 0x1f);
+                    bsv.HighlightColor1 = isOdinSetup ? Color.FromArgb(204, 0, 0) : Color.FromArgb(0x40, 0x57, 0x04);
                     bsv.SelectedTextColor = Color.White;
-                    bsv.UnSelectedTextColor = Color.Gray;
-                    bsv.ButtonsAreaPencilColor = Color.DarkGray;
+                    bsv.UnSelectedTextColor = isOdinSetup ? Color.FromArgb(140, 140, 140) : Color.Gray;
+                    bsv.ButtonsAreaPencilColor = isOdinSetup ? Color.FromArgb(45, 45, 45) : Color.DarkGray;
                 }
                 else if (ctl.GetType() == typeof(HorizontalProgressBar2) ||
                          ctl.GetType() == typeof(VerticalProgressBar2))
@@ -1059,12 +1141,48 @@ mc:Ignorable=""d""
                     ApplyCustomTheme(ctl, 1);
 
                 // Apply global font override
-                try { ctl.Font = new Font("Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
+                try { ctl.Font = new Font(isOdinSetup ? "Segoe UI" : "Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
+            }
+
+            if (isOdinSetup)
+            {
+                BGColor = oldBGColor;
+                TextColor = oldTextColor;
+                ControlBGColor = oldControlBGColor;
+                ButBG = oldButBG;
+                ButBGBot = oldButBGBot;
+                ButBorder = oldButBorder;
             }
         }
 
         private static void ApplyTheme(Control temp, int level)
         {
+            Color oldBGColor = BGColor;
+            Color oldTextColor = TextColor;
+            Color oldControlBGColor = ControlBGColor;
+            Color oldButBG = ButBG;
+            Color oldButBGBot = ButBGBot;
+            Color oldButBorder = ButBorder;
+            Color oldBSVButtonAreaBGColor = BSVButtonAreaBGColor;
+            Color oldUnselectedTextColour = UnselectedTextColour;
+            Color oldBannerColor1 = BannerColor1;
+            Color oldBannerColor2 = BannerColor2;
+
+            bool isOdinSetup = IsInsideInitialSetup(temp);
+            if (isOdinSetup)
+            {
+                BGColor = Color.FromArgb(17, 18, 22);      // #111216
+                TextColor = Color.White;
+                ControlBGColor = Color.FromArgb(24, 26, 30);  // #181A1E
+                ButBG = Color.FromArgb(24, 26, 30);     // Dark gray buttons for standard
+                ButBGBot = Color.FromArgb(24, 26, 30);
+                ButBorder = Color.FromArgb(45, 45, 45);   // #2D2D2D
+                BSVButtonAreaBGColor = Color.FromArgb(20, 22, 26); // #14161A
+                UnselectedTextColour = Color.FromArgb(140, 140, 140); // Dim gray
+                BannerColor1 = Color.FromArgb(204, 0, 0);   // #CC0000
+                BannerColor2 = Color.FromArgb(140, 0, 0);
+            }
+
             if (level == 0)
             {
                 temp.BackColor = BGColor;
@@ -1073,9 +1191,14 @@ mc:Ignorable=""d""
 
             foreach (Control ctl in temp.Controls)
             {
-                if (ctl.GetType() == typeof(Label))
+                if (ctl.GetType() == typeof(Label) || ctl.GetType() == typeof(MyLabel))
                 {
-                    if (!(ctl.Tag is string && (string)ctl.Tag == "custom"))
+                    if (isOdinSetup)
+                    {
+                        ctl.BackColor = Color.Transparent;
+                        ctl.ForeColor = Color.White;
+                    }
+                    else if (!(ctl.Tag is string && (string)ctl.Tag == "custom"))
                     {
                         ctl.ForeColor = TextColor;
                     }
@@ -1349,7 +1472,7 @@ mc:Ignorable=""d""
                     bsv.HighlightColor1 = BannerColor1;
                     bsv.SelectedTextColor = TextColor;
                     bsv.UnSelectedTextColor = UnselectedTextColour;
-                    bsv.ButtonsAreaPencilColor = Color.DarkGray;
+                    bsv.ButtonsAreaPencilColor = isOdinSetup ? Color.FromArgb(45, 45, 45) : Color.DarkGray;
                 }
                 else if (ctl.GetType() == typeof(HorizontalProgressBar2) ||
                          ctl.GetType() == typeof(VerticalProgressBar2))
@@ -1367,7 +1490,21 @@ mc:Ignorable=""d""
                     ApplyTheme(ctl, 1);
 
                 // Apply global font override
-                try { ctl.Font = new Font("Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
+                try { ctl.Font = new Font(isOdinSetup ? "Segoe UI" : "Times New Roman", ctl.Font.Size, ctl.Font.Style); } catch { }
+            }
+
+            if (isOdinSetup)
+            {
+                BGColor = oldBGColor;
+                TextColor = oldTextColor;
+                ControlBGColor = oldControlBGColor;
+                ButBG = oldButBG;
+                ButBGBot = oldButBGBot;
+                ButBorder = oldButBorder;
+                BSVButtonAreaBGColor = oldBSVButtonAreaBGColor;
+                UnselectedTextColour = oldUnselectedTextColour;
+                BannerColor1 = oldBannerColor1;
+                BannerColor2 = oldBannerColor2;
             }
         }
 

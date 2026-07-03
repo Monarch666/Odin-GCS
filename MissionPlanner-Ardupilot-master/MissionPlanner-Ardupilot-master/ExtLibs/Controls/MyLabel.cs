@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
@@ -32,7 +32,8 @@ namespace MissionPlanner.Controls
         {
             stringFormat.Alignment = StringAlignment.Near;
             stringFormat.LineAlignment = StringAlignment.Center;
-
+            try { SetStyle(ControlStyles.SupportsTransparentBackColor, true); } catch { }
+ 
             PaintSurface += OnPaintSurface;
         }
 

@@ -935,7 +935,7 @@ mc:Ignorable=""d""
                 }
                 else if (ctl.GetType() == typeof(MyLabel))
                 {
-                    ctl.BackColor = isDarkPanel ? Color.Transparent : BGColor;
+                    try { ctl.BackColor = isDarkPanel ? Color.Transparent : BGColor; } catch { ctl.BackColor = BGColor; }
                     ctl.ForeColor = TextColor;
                 }
                 else if (ctl.GetType() == typeof(Button))
@@ -1209,7 +1209,7 @@ mc:Ignorable=""d""
                 {
                     if (isDarkPanel)
                     {
-                        ctl.BackColor = Color.Transparent;
+                        try { ctl.BackColor = Color.Transparent; } catch { ctl.BackColor = BGColor; }
                         ctl.ForeColor = Color.White;
                     }
                     else if (!(ctl.Tag is string && (string)ctl.Tag == "custom"))

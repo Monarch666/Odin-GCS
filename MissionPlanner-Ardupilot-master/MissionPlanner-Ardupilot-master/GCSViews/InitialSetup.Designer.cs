@@ -266,14 +266,14 @@ namespace MissionPlanner.GCSViews
             this.SuspendLayout();
 
             // Odin color palette (matches MainV2.OdinTheme)
-            System.Drawing.Color bgColor = System.Drawing.Color.FromArgb(17, 18, 22);      // #111216
-            System.Drawing.Color panelColor = System.Drawing.Color.FromArgb(24, 26, 30);    // #181A1E
-            System.Drawing.Color panel2Color = System.Drawing.Color.FromArgb(32, 35, 40);   // #202328
-            System.Drawing.Color accentRed = System.Drawing.Color.FromArgb(204, 0, 0);      // #CC0000
-            System.Drawing.Color borderColor = System.Drawing.Color.FromArgb(45, 45, 45);   // #2D2D2D
-            System.Drawing.Color textWhite = System.Drawing.Color.White;
+            System.Drawing.Color bgColor = MainV2.OdinTheme.Background;
+            System.Drawing.Color panelColor = MainV2.OdinTheme.Panel;
+            System.Drawing.Color panel2Color = MainV2.OdinTheme.Panel2;
+            System.Drawing.Color accentRed = MainV2.OdinTheme.Green;
+            System.Drawing.Color borderColor = MainV2.OdinTheme.Border;
+            System.Drawing.Color textWhite = MainV2.OdinTheme.White;
             System.Drawing.Color textDim = System.Drawing.Color.FromArgb(140, 140, 140);    // #8C8C8C
-            System.Drawing.Color sidebarBg = System.Drawing.Color.FromArgb(20, 22, 26);     // #14161A
+            System.Drawing.Color sidebarBg = MainV2.OdinTheme.Background;
 
             // Style the main control
             this.BackColor = bgColor;

@@ -887,12 +887,12 @@ mc:Ignorable=""d""
             bool isDarkPanel = isOdinSetup || IsInsideFlightData(temp);
             if (isDarkPanel)
             {
-                BGColor = Color.FromArgb(17, 18, 22);      // #111216
-                TextColor = Color.White;
-                ControlBGColor = Color.FromArgb(24, 26, 30);  // #181A1E
-                ButBG = Color.FromArgb(204, 0, 0);     // #CC0000
-                ButBGBot = Color.FromArgb(140, 0, 0);
-                ButBorder = Color.FromArgb(45, 45, 45);   // #2D2D2D
+                BGColor = MainV2.OdinTheme.Background;
+                TextColor = MainV2.OdinTheme.White;
+                ControlBGColor = MainV2.OdinTheme.Panel;
+                ButBG = MainV2.OdinTheme.Green;
+                ButBGBot = MainV2.OdinTheme.Green;
+                ButBorder = MainV2.OdinTheme.Border;
             }
 
             if (level == 0)
@@ -1185,16 +1185,16 @@ mc:Ignorable=""d""
             bool isDarkPanel = isOdinSetup || IsInsideFlightData(temp);
             if (isDarkPanel)
             {
-                BGColor = Color.FromArgb(17, 18, 22);      // #111216
-                TextColor = Color.White;
-                ControlBGColor = Color.FromArgb(24, 26, 30);  // #181A1E
-                ButBG = Color.FromArgb(24, 26, 30);     // Dark gray buttons for standard
-                ButBGBot = Color.FromArgb(24, 26, 30);
-                ButBorder = Color.FromArgb(45, 45, 45);   // #2D2D2D
-                BSVButtonAreaBGColor = Color.FromArgb(20, 22, 26); // #14161A
+                BGColor = MainV2.OdinTheme.Background;
+                TextColor = MainV2.OdinTheme.White;
+                ControlBGColor = MainV2.OdinTheme.Panel;
+                ButBG = MainV2.OdinTheme.Panel;
+                ButBGBot = MainV2.OdinTheme.Panel;
+                ButBorder = MainV2.OdinTheme.Border;
+                BSVButtonAreaBGColor = MainV2.OdinTheme.Background; 
                 UnselectedTextColour = Color.FromArgb(140, 140, 140); // Dim gray
-                BannerColor1 = Color.FromArgb(204, 0, 0);   // #CC0000
-                BannerColor2 = Color.FromArgb(140, 0, 0);
+                BannerColor1 = MainV2.OdinTheme.Green;
+                BannerColor2 = MainV2.OdinTheme.Green;
             }
 
             if (level == 0)
@@ -1502,7 +1502,7 @@ mc:Ignorable=""d""
                 }
                 else if (ctl.GetType().Name == "HUD" || ctl.GetType().Name == "HUD2")
                 {
-                    ctl.BackColor = Color.FromArgb(17, 18, 22);
+                    ctl.BackColor = MainV2.OdinTheme.Background;
                 }
 
                 if ((ctl.Controls.Count > 0) && (ctl.GetType() != typeof(QuickView)))      //Do not iterate into quickView type leave labels as they are

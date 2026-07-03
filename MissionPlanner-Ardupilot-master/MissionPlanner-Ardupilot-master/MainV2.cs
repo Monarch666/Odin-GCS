@@ -4834,13 +4834,13 @@ namespace MissionPlanner
 
         public static class OdinTheme
         {
-            public static Color Background = Color.FromArgb(17, 18, 22);
-            public static Color Panel = Color.FromArgb(24, 26, 30);
-            public static Color Panel2 = Color.FromArgb(32, 35, 40);
-            public static Color Green = Color.FromArgb(204, 0, 0); // cc0000
-            public static Color Orange = Color.FromArgb(230, 138, 0); // e68a00
+            public static Color Background = Color.FromArgb(10, 12, 14); // #0A0C0E
+            public static Color Panel = Color.FromArgb(26, 29, 33);      // #1A1D21
+            public static Color Panel2 = Color.FromArgb(38, 41, 46);     // #26292E
+            public static Color Green = Color.FromArgb(0, 255, 65);      // #00FF41 (Matrix Green)
+            public static Color Orange = Color.FromArgb(255, 184, 0);    // #FFB800 (Aviation Amber)
             public static Color White = Color.White;
-            public static Color Border = Color.FromArgb(45, 45, 45);
+            public static Color Border = Color.FromArgb(59, 75, 55);     // #3B4B37 (Technical Green)
         }
 
         public static System.Drawing.Drawing2D.GraphicsPath RoundedRect(Rectangle r, int radius)

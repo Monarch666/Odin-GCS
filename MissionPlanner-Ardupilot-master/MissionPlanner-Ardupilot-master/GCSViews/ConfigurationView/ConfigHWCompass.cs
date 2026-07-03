@@ -1,4 +1,4 @@
-﻿using MissionPlanner.ArduPilot;
+using MissionPlanner.ArduPilot;
 using MissionPlanner.Controls;
 using MissionPlanner.Utilities;
 using System;
@@ -39,205 +39,24 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
             startup = true;
 
-            if (MainV2.comPort.MAV.cs.version > Version.Parse("3.2.1") &&
-                MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2)
+            this.Controls.Clear();
+            if (pnlHorizonContainer == null)
             {
-                QuickAPM25.Visible = false;
-                buttonAPMExternal.Visible = false;
-                buttonQuickPixhawk.Visible = false;
-                label1.Visible = false;
+                CreateHorizonLayout();
             }
+            this.Controls.Add(pnlHorizonContainer);
 
-            if (MainV2.comPort.MAV.cs.version >= Version.Parse("3.7.1") &&
-                MainV2.comPort.MAV.cs.firmware == Firmwares.ArduPlane
-                || Control.ModifierKeys == Keys.Control)
+            if (MainV2.comPort.MAV.param["COMPASS_CAL_FIT"] != null)
             {
-                groupBoxonboardcalib.Visible = true;
-                label4.Visible = true;
-                groupBoxmpcalib.Visible = true;
-            }
-            else if ((MainV2.comPort.MAV.cs.capabilities & (uint)MAVLink.MAV_PROTOCOL_CAPABILITY.COMPASS_CALIBRATION) == 0)
-            {
-                groupBoxonboardcalib.Visible = false;
-                label4.Visible = false;
-                groupBoxmpcalib.Visible = true;
-            }
-            else
-            {
-                groupBoxonboardcalib.Visible = true;
-                label4.Visible = false;
-                groupBoxmpcalib.Visible = false;
-            }
-
-            // General Compass Settings
-
-            CHK_compass_learn.setup(1, 0, "COMPASS_LEARN", MainV2.comPort.MAV.param);
-            if (MainV2.comPort.MAV.param["COMPASS_DEC"] != null)
-            {
-                var dec = MainV2.comPort.MAV.param["COMPASS_DEC"].Value * MathHelper.rad2deg;
-
-                var min = (dec - (int)dec) * 60;
-
-                TXT_declination_deg.Text = ((int)dec).ToString("0");
-                TXT_declination_min.Text = min.ToString("0");
-            }
-
-            if (MainV2.comPort.MAV.param["COMPASS_AUTODEC"] != null)
-            {
-                CHK_autodec.Checked = MainV2.comPort.MAV.param["COMPASS_AUTODEC"].ToString() == "1" ? true : false;
-            }
-
-
-            // Compass 1 settings
-            CHK_compass1_use.setup(1, 0, "COMPASS_USE", MainV2.comPort.MAV.param);
-            CHK_compass1_external.setup(1, 0, "COMPASS_EXTERNAL", MainV2.comPort.MAV.param);
-            CMB_compass1_orient.setup(ParameterMetaDataRepository.GetParameterOptionsInt("COMPASS_ORIENT",
-                    MainV2.comPort.MAV.cs.firmware.ToString()), "COMPASS_ORIENT", MainV2.comPort.MAV.param);
-
-            if (!MainV2.comPort.MAV.param.ContainsKey("COMPASS_OFS_X"))
-            {
-                Enabled = false;
-                return;
-            }
-
-            int offset1_x = (int)MainV2.comPort.MAV.param["COMPASS_OFS_X"];
-            int offset1_y = (int)MainV2.comPort.MAV.param["COMPASS_OFS_Y"];
-            int offset1_z = (int)MainV2.comPort.MAV.param["COMPASS_OFS_Z"];
-            // Turn offsets red if any offset exceeds a threshold, or all values are 0 (not yet calibrated)
-            if (absmax(offset1_x, offset1_y, offset1_z) > THRESHOLD_OFS_RED)
-                LBL_compass1_offset.ForeColor = Color.Red;
-            else if (absmax(offset1_x, offset1_y, offset1_z) > THRESHOLD_OFS_YELLOW)
-                LBL_compass1_offset.ForeColor = Color.Yellow;
-            else if (offset1_x == 0 && offset1_y == 0 & offset1_z == 0)
-                LBL_compass1_offset.ForeColor = Color.Red;
-            else
-                LBL_compass1_offset.ForeColor = Color.Green;
-
-
-            LBL_compass1_offset.Text = "OFFSETS  X: " +
-                                       offset1_x.ToString() +
-                                       ",   Y: " + offset1_y.ToString() +
-                                       ",   Z: " + offset1_z.ToString();
-            if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_MOT_X"))
-            {
-                LBL_compass1_mot.Text = "MOT          X: " +
-                                        ((int)MainV2.comPort.MAV.param["COMPASS_MOT_X"]).ToString() +
-                                        ",   Y: " + ((int)MainV2.comPort.MAV.param["COMPASS_MOT_Y"]).ToString() +
-                                        ",   Z: " + ((int)MainV2.comPort.MAV.param["COMPASS_MOT_Z"]).ToString();
-            }
-
-            if (!MainV2.DisplayConfiguration.displayCompassConfiguration)
-            {
-                CHK_compass1_use.Enabled = false;
-                CHK_compass1_external.Enabled = false;
-                CMB_compass1_orient.Enabled = false;
-            }
-
-            // Compass 2 settings
-            if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_EXTERN2"))
-            {
-                CHK_compass2_use.setup(1, 0, "COMPASS_USE2", MainV2.comPort.MAV.param);
-                CHK_compass2_external.setup(1, 0, "COMPASS_EXTERN2", MainV2.comPort.MAV.param);
-                CMB_compass2_orient.setup(ParameterMetaDataRepository.GetParameterOptionsInt("COMPASS_ORIENT2",
-                    MainV2.comPort.MAV.cs.firmware.ToString()), "COMPASS_ORIENT2", MainV2.comPort.MAV.param);
-
-                CMB_primary_compass.setup(typeof(CompassNumber), "COMPASS_PRIMARY", MainV2.comPort.MAV.param);
-
-                int offset2_x = (int)MainV2.comPort.MAV.param["COMPASS_OFS2_X"];
-                int offset2_y = (int)MainV2.comPort.MAV.param["COMPASS_OFS2_Y"];
-                int offset2_z = (int)MainV2.comPort.MAV.param["COMPASS_OFS2_Z"];
-
-                if (absmax(offset2_x, offset2_y, offset2_z) > THRESHOLD_OFS_RED)
-                    LBL_compass2_offset.ForeColor = Color.Red;
-                else if (absmax(offset2_x, offset2_y, offset2_z) > THRESHOLD_OFS_YELLOW)
-                    LBL_compass2_offset.ForeColor = Color.Yellow;
-                else if (offset2_x == 0 && offset2_y == 0 & offset2_z == 0)
-                    LBL_compass2_offset.ForeColor = Color.Red;
-                else
-                    LBL_compass2_offset.ForeColor = Color.Green;
-
-
-                LBL_compass2_offset.Text = "OFFSETS  X: " +
-                                           offset2_x.ToString() +
-                                           ",   Y: " + offset2_y.ToString() +
-                                           ",   Z: " + offset2_z.ToString();
-                if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_MOT2_X"))
+                try
                 {
-                    LBL_compass2_mot.Text = "MOT          X: " +
-                                            ((int)MainV2.comPort.MAV.param["COMPASS_MOT2_X"]).ToString() +
-                                            ",   Y: " + ((int)MainV2.comPort.MAV.param["COMPASS_MOT2_Y"]).ToString() +
-                                            ",   Z: " + ((int)MainV2.comPort.MAV.param["COMPASS_MOT2_Z"]).ToString();
+                    float fit = (float)MainV2.comPort.MAV.param["COMPASS_CAL_FIT"].Value;
+                    chkFitnessStrict.Checked = (fit >= 16);
                 }
-
-                if (!MainV2.DisplayConfiguration.displayCompassConfiguration)
-                {
-                    CHK_compass2_use.Enabled = false;
-                    CHK_compass2_external.Enabled = false;
-                    CMB_compass2_orient.Enabled = false;
-                }
-
-            }
-            else
-            {
-                groupBoxCompass2.Hide();
+                catch { }
             }
 
-            if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_EXTERN3"))
-            {
-                CHK_compass3_external.setup(1, 0, "COMPASS_EXTERN3", MainV2.comPort.MAV.param);
-                CHK_compass3_use.setup(1, 0, "COMPASS_USE3", MainV2.comPort.MAV.param);
-                CMB_compass3_orient.setup(ParameterMetaDataRepository.GetParameterOptionsInt("COMPASS_ORIENT3",
-                    MainV2.comPort.MAV.cs.firmware.ToString()), "COMPASS_ORIENT3", MainV2.comPort.MAV.param);
-
-                int offset3_x = (int)MainV2.comPort.MAV.param["COMPASS_OFS3_X"];
-                int offset3_y = (int)MainV2.comPort.MAV.param["COMPASS_OFS3_Y"];
-                int offset3_z = (int)MainV2.comPort.MAV.param["COMPASS_OFS3_Z"];
-
-                if (absmax(offset3_x, offset3_y, offset3_z) > THRESHOLD_OFS_RED)
-                    LBL_compass3_offset.ForeColor = Color.Red;
-                else if (absmax(offset3_x, offset3_y, offset3_z) > THRESHOLD_OFS_YELLOW)
-                    LBL_compass3_offset.ForeColor = Color.Yellow;
-                else if (offset3_x == 0 && offset3_y == 0 & offset3_z == 0)
-                    LBL_compass3_offset.ForeColor = Color.Red;
-                else
-                    LBL_compass3_offset.ForeColor = Color.Green;
-
-
-                LBL_compass3_offset.Text = "OFFSETS  X: " +
-                                           offset3_x.ToString() +
-                                           ",   Y: " + offset3_y.ToString() +
-                                           ",   Z: " + offset3_z.ToString();
-                if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_MOT3_X"))
-                {
-                    LBL_compass3_mot.Text = "MOT          X: " +
-                                            ((int)MainV2.comPort.MAV.param["COMPASS_MOT3_X"]).ToString() +
-                                            ",   Y: " + ((int)MainV2.comPort.MAV.param["COMPASS_MOT3_Y"]).ToString() +
-                                            ",   Z: " + ((int)MainV2.comPort.MAV.param["COMPASS_MOT3_Z"]).ToString();
-                }
-
-                if (!MainV2.DisplayConfiguration.displayCompassConfiguration)
-                {
-                    CHK_compass3_use.Enabled = false;
-                    CHK_compass3_external.Enabled = false;
-                    CMB_compass3_orient.Enabled = false;
-                }
-            }
-            else
-            {
-                groupBoxCompass3.Hide();
-            }
-
-            mavlinkComboBoxfitness.setup(ParameterMetaDataRepository.GetParameterOptionsInt("COMPASS_CAL_FIT",
-                    MainV2.comPort.MAV.cs.firmware.ToString()), "COMPASS_CAL_FIT", MainV2.comPort.MAV.param);
-
-            ShowRelevantFields();
-
-            if (!MainV2.DisplayConfiguration.displayCompassConfiguration)
-            {
-                CHK_compass_learn.Enabled = false;
-                CHK_autodec.Enabled = false;
-                CMB_primary_compass.Enabled = false;
-            }
+            UpdateHorizonUI();
 
             startup = false;
         }
@@ -607,6 +426,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 CustomMessageBox.Show("Please reboot the autopilot");
             }
 
+            UpdateHorizonUI();
         }
 
         private void buttonQuickPixhawk_Click(object sender, EventArgs e)
@@ -755,28 +575,592 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             LBL_primary_compass.Visible = MainV2.comPort.MAV.param.ContainsKey("COMPASS_PRIMARY");
         }
 
-        private void but_largemagcal_Click(object sender, EventArgs e)
+        // Horizon Compass Layout Fields
+        private Panel pnlHorizonContainer;
+        private Label lblHorizonTitle;
+        private Label lblHorizonSubtitle;
+        private Label lblStatusBadge;
+
+        private Panel pnlProcedure;
+        private Panel pnlVisualizer;
+        private Panel pnlOffsets;
+        private Panel pnlWhy;
+        private Panel pnlProgress;
+
+        // Steps
+        private Label lblStep1Circle, lblStep1Title, lblStep1Desc;
+        private Label lblStep2Circle, lblStep2Title, lblStep2Desc;
+        private Label lblStep3Circle, lblStep3Title, lblStep3Desc;
+
+        // Visualizer
+        private Label lblVisualizerStatus;
+
+        // Offsets Table Labels
+        private Label lblComp1Header;
+        private Label lblComp1LblX, lblComp1ValX;
+        private Label lblComp1LblY, lblComp1ValY;
+        private Label lblComp1LblZ, lblComp1ValZ;
+
+        private Label lblComp2Header;
+        private Label lblComp2LblX, lblComp2ValX;
+        private Label lblComp2LblY, lblComp2ValY;
+        private Label lblComp2LblZ, lblComp2ValZ;
+
+        private Label lblSamplesHeader;
+        private Label lblSamplesCollected;
+
+        // Progress controls
+        private Label lblProgressHeader;
+        private Panel pnlProgressBarTrack;
+        private Panel pnlProgressBarFill;
+        private Label lblProgressPct;
+        private CheckBox chkFitnessStrict;
+        private Button btnHorizonCancel;
+        private Button btnHorizonStart;
+
+        private void CreateHorizonLayout()
         {
-            double value = 0;
-            if (InputBox.Show("MagCal Yaw", "Enter current heading in degrees\nNOTE: gps lock is required. Heading is true, not magnetic", ref value) == DialogResult.OK)
+            pnlHorizonContainer = new Panel();
+            pnlHorizonContainer.BackColor = MainV2.OdinTheme.Background;
+            pnlHorizonContainer.ForeColor = MainV2.OdinTheme.White;
+
+            // Title
+            lblHorizonTitle = new Label();
+            lblHorizonTitle.Text = "Compass Calibration";
+            lblHorizonTitle.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
+            lblHorizonTitle.ForeColor = MainV2.OdinTheme.White;
+            lblHorizonTitle.AutoSize = true;
+            pnlHorizonContainer.Controls.Add(lblHorizonTitle);
+
+            // Subtitle
+            lblHorizonSubtitle = new Label();
+            lblHorizonSubtitle.Text = "Align the internal and external magnetometers to ensure accurate heading estimation during flight.\nRequired after hardware changes or significant location shifts.";
+            lblHorizonSubtitle.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            lblHorizonSubtitle.ForeColor = Color.FromArgb(170, 175, 180);
+            lblHorizonSubtitle.AutoSize = true;
+            pnlHorizonContainer.Controls.Add(lblHorizonSubtitle);
+
+            // Status Badge
+            lblStatusBadge = new Label();
+            lblStatusBadge.Text = "STATUS: CALIBRATION REQUIRED";
+            lblStatusBadge.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblStatusBadge.BackColor = Color.FromArgb(60, 45, 0);
+            lblStatusBadge.ForeColor = MainV2.OdinTheme.Orange;
+            lblStatusBadge.BorderStyle = BorderStyle.FixedSingle;
+            lblStatusBadge.TextAlign = ContentAlignment.MiddleCenter;
+            lblStatusBadge.Size = new Size(240, 32);
+            pnlHorizonContainer.Controls.Add(lblStatusBadge);
+
+            // Panels
+            pnlProcedure = CreatePanel("Procedure|SYS_GUIDE");
+            pnlVisualizer = CreatePanel("Viz Attitude|VIZ_ATTITUDE");
+            pnlOffsets = CreatePanel("Mag Offsets (Raw)|DATA_STREAM");
+            pnlWhy = CreatePanel("Why this matters|INFO_TIP");
+            pnlProgress = CreatePanel("Calibration Progress|CALIB_STATUS");
+
+            // Name visualizer panel so Paint handler can identify it
+            pnlVisualizer.Name = "pnlVisualizer";
+
+            // --- Procedure Panel Child Controls ---
+            lblStep1Circle = CreateCircleLabel("lblCircle1");
+            lblStep1Title = CreateTitleLabel("Clear Area");
+            lblStep1Desc = CreateDescLabel("Move away from large metal objects,\nspeakers, or power lines.");
+            pnlProcedure.Controls.AddRange(new Control[] { lblStep1Circle, lblStep1Title, lblStep1Desc });
+
+            lblStep2Circle = CreateCircleLabel("lblCircle2");
+            lblStep2Title = CreateTitleLabel("Initiate");
+            lblStep2Desc = CreateDescLabel("Click 'Start Calibration' below to\nbegin gathering samples.");
+            pnlProcedure.Controls.AddRange(new Control[] { lblStep2Circle, lblStep2Title, lblStep2Desc });
+
+            lblStep3Circle = CreateCircleLabel("lblCircle3");
+            lblStep3Title = CreateTitleLabel("Rotate Vehicle");
+            lblStep3Desc = CreateDescLabel("Rotate the drone smoothly on all\naxes until the progress bar\ncompletes.");
+            pnlProcedure.Controls.AddRange(new Control[] { lblStep3Circle, lblStep3Title, lblStep3Desc });
+
+            // --- Visualizer Panel Child Controls ---
+            lblVisualizerStatus = new Label();
+            lblVisualizerStatus.Text = "AWAITING ROTATION";
+            lblVisualizerStatus.Font = new Font("Consolas", 11F, FontStyle.Bold);
+            lblVisualizerStatus.ForeColor = Color.FromArgb(120, 130, 140);
+            lblVisualizerStatus.TextAlign = ContentAlignment.MiddleCenter;
+            lblVisualizerStatus.Dock = DockStyle.Fill;
+            pnlVisualizer.Controls.Add(lblVisualizerStatus);
+
+            // --- Offsets Panel Child Controls ---
+            lblComp1Header = CreateSectionHeaderLabel("COMPASS 1 (Primary)");
+            lblComp1LblX = CreateOffsetLabel("X:", false); lblComp1ValX = CreateOffsetLabel("----", true);
+            lblComp1LblY = CreateOffsetLabel("Y:", false); lblComp1ValY = CreateOffsetLabel("----", true);
+            lblComp1LblZ = CreateOffsetLabel("Z:", false); lblComp1ValZ = CreateOffsetLabel("----", true);
+            pnlOffsets.Controls.AddRange(new Control[] { lblComp1Header, lblComp1LblX, lblComp1ValX, lblComp1LblY, lblComp1ValY, lblComp1LblZ, lblComp1ValZ });
+
+            lblComp2Header = CreateSectionHeaderLabel("COMPASS 2 (External)");
+            lblComp2LblX = CreateOffsetLabel("X:", false); lblComp2ValX = CreateOffsetLabel("----", true);
+            lblComp2LblY = CreateOffsetLabel("Y:", false); lblComp2ValY = CreateOffsetLabel("----", true);
+            lblComp2LblZ = CreateOffsetLabel("Z:", false); lblComp2ValZ = CreateOffsetLabel("----", true);
+            pnlOffsets.Controls.AddRange(new Control[] { lblComp2Header, lblComp2LblX, lblComp2ValX, lblComp2LblY, lblComp2ValY, lblComp2LblZ, lblComp2ValZ });
+
+            lblSamplesHeader = CreateSectionHeaderLabel("SAMPLES COLLECTED");
+            lblSamplesCollected = new Label();
+            lblSamplesCollected.Text = "0 / 400";
+            lblSamplesCollected.Font = new Font("Consolas", 18F, FontStyle.Bold);
+            lblSamplesCollected.ForeColor = MainV2.OdinTheme.White;
+            lblSamplesCollected.AutoSize = true;
+            pnlOffsets.Controls.Add(lblSamplesHeader);
+            pnlOffsets.Controls.Add(lblSamplesCollected);
+
+            // --- Why child controls ---
+            var lblWhyText = new Label();
+            lblWhyText.Text = "An uncalibrated compass can lead to erratic flight behavior, 'toilet-bowling' in Loiter mode, or complete loss of autonomous navigation capability.";
+            lblWhyText.Font = new Font("Segoe UI", 9.5F);
+            lblWhyText.ForeColor = Color.FromArgb(170, 175, 180);
+            lblWhyText.Location = new Point(16, 45);
+            lblWhyText.Size = new Size(240, 100);
+            pnlWhy.Controls.Add(lblWhyText);
+
+            // --- Progress child controls ---
+            lblProgressHeader = new Label();
+            lblProgressHeader.Text = "CALIBRATION PROGRESS";
+            lblProgressHeader.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblProgressHeader.ForeColor = Color.FromArgb(120, 125, 130);
+            lblProgressHeader.AutoSize = true;
+            pnlProgress.Controls.Add(lblProgressHeader);
+
+            pnlProgressBarTrack = new Panel();
+            pnlProgressBarTrack.BackColor = Color.FromArgb(28, 30, 34);
+            pnlProgressBarTrack.Height = 10;
+            pnlProgress.Controls.Add(pnlProgressBarTrack);
+
+            pnlProgressBarFill = new Panel();
+            pnlProgressBarFill.BackColor = MainV2.OdinTheme.Green;
+            pnlProgressBarFill.Height = 10;
+            pnlProgressBarTrack.Controls.Add(pnlProgressBarFill);
+
+            lblProgressPct = new Label();
+            lblProgressPct.Text = "0%";
+            lblProgressPct.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            lblProgressPct.ForeColor = MainV2.OdinTheme.Green;
+            lblProgressPct.AutoSize = true;
+            pnlProgress.Controls.Add(lblProgressPct);
+
+            chkFitnessStrict = new CheckBox();
+            chkFitnessStrict.Text = "Fitness: Strict";
+            chkFitnessStrict.Font = new Font("Segoe UI", 9.5F);
+            chkFitnessStrict.ForeColor = MainV2.OdinTheme.White;
+            chkFitnessStrict.FlatStyle = FlatStyle.Flat;
+            chkFitnessStrict.FlatAppearance.BorderColor = MainV2.OdinTheme.Border;
+            chkFitnessStrict.AutoSize = true;
+            chkFitnessStrict.Cursor = Cursors.Hand;
+            chkFitnessStrict.CheckedChanged += ChkFitnessStrict_CheckedChanged;
+            pnlProgress.Controls.Add(chkFitnessStrict);
+
+            btnHorizonCancel = new Button();
+            btnHorizonCancel.Text = "CANCEL";
+            btnHorizonCancel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnHorizonCancel.ForeColor = Color.FromArgb(180, 70, 70);
+            btnHorizonCancel.BackColor = Color.Transparent;
+            btnHorizonCancel.FlatStyle = FlatStyle.Flat;
+            btnHorizonCancel.FlatAppearance.BorderColor = Color.FromArgb(180, 70, 70);
+            btnHorizonCancel.FlatAppearance.BorderSize = 1;
+            btnHorizonCancel.Size = new Size(110, 32);
+            btnHorizonCancel.Cursor = Cursors.Hand;
+            btnHorizonCancel.Click += (s, e) => BUT_OBmagcalcancel_Click(null, null);
+            pnlProgress.Controls.Add(btnHorizonCancel);
+
+            btnHorizonStart = new Button();
+            btnHorizonStart.Text = "START CALIBRATION";
+            btnHorizonStart.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnHorizonStart.ForeColor = Color.Black;
+            btnHorizonStart.BackColor = MainV2.OdinTheme.Green;
+            btnHorizonStart.FlatStyle = FlatStyle.Flat;
+            btnHorizonStart.FlatAppearance.BorderSize = 0;
+            btnHorizonStart.Size = new Size(160, 32);
+            btnHorizonStart.Cursor = Cursors.Hand;
+            btnHorizonStart.Click += BtnHorizonStart_Click;
+            pnlProgress.Controls.Add(btnHorizonStart);
+
+            pnlHorizonContainer.Resize += (s, e) => LayoutHorizon();
+            LayoutHorizon();
+        }
+
+        private void BtnHorizonStart_Click(object sender, EventArgs e)
+        {
+            if (timer1.Enabled)
+            {
+                BUT_OBmagcalaccept_Click(null, null);
+            }
+            else
+            {
+                BUT_OBmagcalstart_Click(null, null);
+            }
+        }
+
+        private void ChkFitnessStrict_CheckedChanged(object sender, EventArgs e)
+        {
+            if (startup) return;
+            try
+            {
+                if (MainV2.comPort.MAV.param["COMPASS_CAL_FIT"] != null)
+                {
+                    MainV2.comPort.setParam((byte)MainV2.comPort.sysidcurrent, (byte)MainV2.comPort.compidcurrent, "COMPASS_CAL_FIT", chkFitnessStrict.Checked ? 16 : 8);
+                }
+            }
+            catch { }
+        }
+
+        private Panel CreatePanel(string panelTag)
+        {
+            Panel p = new Panel();
+            p.BackColor = MainV2.OdinTheme.Panel;
+            p.Tag = panelTag;
+            p.Paint += PaintHorizonPanel;
+            pnlHorizonContainer.Controls.Add(p);
+            return p;
+        }
+
+        private Label CreateCircleLabel(string name)
+        {
+            Label lbl = new Label();
+            lbl.Name = name;
+            lbl.Size = new Size(24, 24);
+            lbl.BackColor = Color.Transparent;
+            lbl.Paint += PaintStepCircle;
+            return lbl;
+        }
+
+        private Label CreateTitleLabel(string text)
+        {
+            Label lbl = new Label();
+            lbl.Text = text;
+            lbl.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
+            lbl.ForeColor = MainV2.OdinTheme.White;
+            lbl.AutoSize = true;
+            return lbl;
+        }
+
+        private Label CreateDescLabel(string text)
+        {
+            Label lbl = new Label();
+            lbl.Text = text;
+            lbl.Font = new Font("Segoe UI", 9.5F);
+            lbl.ForeColor = Color.FromArgb(140, 145, 150);
+            lbl.AutoSize = true;
+            return lbl;
+        }
+
+        private Label CreateSectionHeaderLabel(string text)
+        {
+            Label lbl = new Label();
+            lbl.Text = text;
+            lbl.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            lbl.ForeColor = Color.FromArgb(120, 130, 140);
+            lbl.AutoSize = true;
+            return lbl;
+        }
+
+        private Label CreateOffsetLabel(string text, bool isVal)
+        {
+            Label lbl = new Label();
+            lbl.Text = text;
+            lbl.Font = new Font("Consolas", 11F, isVal ? FontStyle.Bold : FontStyle.Regular);
+            lbl.ForeColor = isVal ? MainV2.OdinTheme.Green : Color.FromArgb(140, 145, 150);
+            lbl.AutoSize = true;
+            return lbl;
+        }
+
+        private void PaintHorizonPanel(object sender, PaintEventArgs e)
+        {
+            Panel p = sender as Panel;
+            if (p == null) return;
+
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            using (var borderPen = new Pen(MainV2.OdinTheme.Border, 1))
+            {
+                g.DrawRectangle(borderPen, 0, 0, p.Width - 1, p.Height - 1);
+            }
+
+            string[] tags = (p.Tag as string ?? "").Split('|');
+            string title = tags.Length > 0 ? tags[0] : "";
+            string sysTag = tags.Length > 1 ? tags[1] : "";
+
+            if (!string.IsNullOrEmpty(title))
+            {
+                using (var titleFont = new Font("Segoe UI", 11F, FontStyle.Bold))
+                using (var tagFont = new Font("Consolas", 8F, FontStyle.Bold))
+                using (var titleBrush = new SolidBrush(MainV2.OdinTheme.White))
+                using (var tagBrush = new SolidBrush(Color.FromArgb(100, 110, 120)))
+                {
+                    g.DrawString(title, titleFont, titleBrush, 16, 12);
+
+                    if (!string.IsNullOrEmpty(sysTag))
+                    {
+                        string fullTag = $"[ {sysTag} ]";
+                        SizeF tagSize = g.MeasureString(fullTag, tagFont);
+                        g.DrawString(fullTag, tagFont, tagBrush, p.Width - tagSize.Width - 16, 15);
+                    }
+                }
+            }
+
+            if (p.Name == "pnlVisualizer" || p == pnlVisualizer)
+            {
+                int centerX = p.Width / 2;
+                int centerY = p.Height / 2;
+                int radius = 70;
+
+                using (var pen = new Pen(Color.FromArgb(50, MainV2.OdinTheme.Green), 1))
+                {
+                    g.DrawEllipse(pen, centerX - radius, centerY - radius, radius * 2, radius * 2);
+                    g.DrawLine(pen, centerX - radius - 15, centerY, centerX + radius + 15, centerY);
+                    g.DrawLine(pen, centerX, centerY - radius - 15, centerX, centerY + radius + 15);
+                }
+            }
+        }
+
+        private void PaintStepCircle(object sender, PaintEventArgs e)
+        {
+            Label lbl = sender as Label;
+            if (lbl == null) return;
+
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            bool isActive = (lbl.Name == "lblCircle1" && !timer1.Enabled) || (lbl.Name == "lblCircle3" && timer1.Enabled);
+            Color circleColor = isActive ? MainV2.OdinTheme.Green : Color.FromArgb(40, 45, 50);
+
+            using (var brush = new SolidBrush(circleColor))
+            {
+                g.FillEllipse(brush, 0, 0, lbl.Width - 1, lbl.Height - 1);
+            }
+
+            string num = lbl.Name.Substring(lbl.Name.Length - 1);
+            using (var font = new Font("Segoe UI", 9F, FontStyle.Bold))
+            using (var textBrush = new SolidBrush(isActive ? Color.Black : Color.White))
+            {
+                SizeF size = g.MeasureString(num, font);
+                g.DrawString(num, font, textBrush, lbl.Width / 2 - size.Width / 2, lbl.Height / 2 - size.Height / 2);
+            }
+        }
+
+        private void LayoutHorizon()
+        {
+            if (pnlHorizonContainer == null) return;
+
+            pnlHorizonContainer.Bounds = this.ClientRectangle;
+
+            // Title
+            lblHorizonTitle.Location = new Point(20, 20);
+            lblHorizonSubtitle.Location = new Point(22, 55);
+
+            // Status Badge
+            lblStatusBadge.Location = new Point(pnlHorizonContainer.Width - lblStatusBadge.Width - 30, 20);
+
+            // Columns layout
+            int startY = 110;
+            int bottomHeight = 150;
+            int colHeight = pnlHorizonContainer.Height - startY - bottomHeight - 30;
+            if (colHeight < 150) colHeight = 150;
+
+            int colWidth = (pnlHorizonContainer.Width - 50) / 3;
+            if (colWidth < 180) colWidth = 180;
+
+            pnlProcedure.Bounds = new Rectangle(20, startY, colWidth, colHeight);
+            pnlVisualizer.Bounds = new Rectangle(20 + colWidth + 10, startY, colWidth, colHeight);
+            pnlOffsets.Bounds = new Rectangle(20 + (colWidth + 10) * 2, startY, colWidth, colHeight);
+
+            // Bottom panels layout
+            int bottomY = startY + colHeight + 12;
+            pnlWhy.Bounds = new Rectangle(20, bottomY, colWidth, bottomHeight);
+            pnlProgress.Bounds = new Rectangle(20 + colWidth + 10, bottomY, colWidth * 2 + 10, bottomHeight);
+
+            // Step layout inside Procedure
+            int stepGap = colHeight / 4;
+            if (stepGap < 45) stepGap = 45;
+            LayoutStep(lblStep1Circle, lblStep1Title, lblStep1Desc, 16, 45);
+            LayoutStep(lblStep2Circle, lblStep2Title, lblStep2Desc, 16, 45 + stepGap);
+            LayoutStep(lblStep3Circle, lblStep3Title, lblStep3Desc, 16, 45 + stepGap * 2);
+
+            // Offset fields layout inside Offsets Panel
+            lblComp1Header.Location = new Point(16, 40);
+            LayoutOffsetRow(lblComp1LblX, lblComp1ValX, lblComp1LblY, lblComp1ValY, lblComp1LblZ, lblComp1ValZ, 16, 62);
+
+            lblComp2Header.Location = new Point(16, 95);
+            LayoutOffsetRow(lblComp2LblX, lblComp2ValX, lblComp2LblY, lblComp2ValY, lblComp2LblZ, lblComp2ValZ, 16, 117);
+
+            lblSamplesHeader.Location = new Point(16, 155);
+            lblSamplesCollected.Location = new Point(16, 175);
+
+            // Progress Panel controls layout
+            lblProgressHeader.Location = new Point(16, 35);
+            pnlProgressBarTrack.Location = new Point(16, 55);
+            pnlProgressBarTrack.Width = pnlProgress.Width - 100;
+            lblProgressPct.Location = new Point(pnlProgressBarTrack.Right + 12, 52);
+
+            chkFitnessStrict.Location = new Point(16, 95);
+            btnHorizonCancel.Location = new Point(pnlProgress.Width - 290, 90);
+            btnHorizonStart.Location = new Point(pnlProgress.Width - 176, 90);
+        }
+
+        private void LayoutStep(Label circle, Label title, Label desc, int x, int y)
+        {
+            circle.Location = new Point(x, y);
+            title.Location = new Point(x + 32, y + 2);
+            desc.Location = new Point(x + 32, y + 24);
+        }
+
+        private void LayoutOffsetRow(Label lx, Label vx, Label ly, Label vy, Label lz, Label vz, int x, int y)
+        {
+            lx.Location = new Point(x, y);
+            vx.Location = new Point(x + 18, y);
+            ly.Location = new Point(x + 65, y);
+            vy.Location = new Point(x + 83, y);
+            lz.Location = new Point(x + 130, y);
+            vz.Location = new Point(x + 148, y);
+        }
+
+        private void UpdateHorizonUI()
+        {
+            if (pnlHorizonContainer == null) return;
+
+            // Strict fitness parameter
+            if (MainV2.comPort.MAV.param["COMPASS_CAL_FIT"] != null)
             {
                 try
                 {
-                    if (MainV2.comPort.doCommand(MainV2.comPort.MAV.sysid, MainV2.comPort.MAV.compid,
-                        MAVLink.MAV_CMD.FIXED_MAG_CAL_YAW, (float)value, 0, 0, 0, 0, 0, 0))
-                    {
-                        CustomMessageBox.Show(Strings.Completed, Strings.Completed);
-                    }
-                    else
-                    {
-                        CustomMessageBox.Show(Strings.CommandFailed, Strings.ERROR);
-                    }
+                    float fit = (float)MainV2.comPort.MAV.param["COMPASS_CAL_FIT"].Value;
+                    chkFitnessStrict.Checked = (fit >= 16);
                 }
-                catch (Exception)
+                catch { }
+            }
+
+            int maxPct = 0;
+            lock (mprog)
+            {
+                foreach (var item in mprog)
                 {
-                    CustomMessageBox.Show(Strings.CommandFailed, Strings.ERROR);
+                    var obj = (MAVLink.mavlink_mag_cal_progress_t)item.data;
+                    if (obj.completion_pct > maxPct)
+                        maxPct = obj.completion_pct;
                 }
             }
+
+            // Sync offsets report
+            lock (mrep)
+            {
+                foreach (var item in mrep)
+                {
+                    var obj = (MAVLink.mavlink_mag_cal_report_t)item.data;
+                    if (obj.compass_id == 0)
+                    {
+                        lblComp1ValX.Text = obj.ofs_x.ToString("0");
+                        lblComp1ValY.Text = obj.ofs_y.ToString("0");
+                        lblComp1ValZ.Text = obj.ofs_z.ToString("0");
+                    }
+                    else if (obj.compass_id == 1)
+                    {
+                        lblComp2ValX.Text = obj.ofs_x.ToString("0");
+                        lblComp2ValY.Text = obj.ofs_y.ToString("0");
+                        lblComp2ValZ.Text = obj.ofs_z.ToString("0");
+                    }
+                }
+            }
+
+            // Fallback: Read parameter offsets if reports are empty
+            if (lblComp1ValX.Text == "----" && MainV2.comPort.MAV.param.ContainsKey("COMPASS_OFS_X"))
+            {
+                try
+                {
+                    lblComp1ValX.Text = ((int)MainV2.comPort.MAV.param["COMPASS_OFS_X"]).ToString();
+                    lblComp1ValY.Text = ((int)MainV2.comPort.MAV.param["COMPASS_OFS_Y"]).ToString();
+                    lblComp1ValZ.Text = ((int)MainV2.comPort.MAV.param["COMPASS_OFS_Z"]).ToString();
+                }
+                catch { }
+            }
+            if (lblComp2ValX.Text == "----" && MainV2.comPort.MAV.param.ContainsKey("COMPASS_OFS2_X"))
+            {
+                try
+                {
+                    lblComp2ValX.Text = ((int)MainV2.comPort.MAV.param["COMPASS_OFS2_X"]).ToString();
+                    lblComp2ValY.Text = ((int)MainV2.comPort.MAV.param["COMPASS_OFS2_Y"]).ToString();
+                    lblComp2ValZ.Text = ((int)MainV2.comPort.MAV.param["COMPASS_OFS2_Z"]).ToString();
+                }
+                catch { }
+            }
+
+            // Toggles between Awaiting and Active Calibrating States
+            if (timer1.Enabled)
+            {
+                lblStatusBadge.Text = "STATUS: CALIBRATING";
+                lblStatusBadge.BackColor = Color.FromArgb(60, 45, 0);
+                lblStatusBadge.ForeColor = MainV2.OdinTheme.Orange;
+
+                lblVisualizerStatus.Text = "CALIBRATING...\nROTATING VEHICLE";
+                lblVisualizerStatus.ForeColor = MainV2.OdinTheme.Green;
+
+                btnHorizonStart.Text = "ACCEPT CALIBRATION";
+                bool hasReports = false;
+                lock (mrep)
+                {
+                    hasReports = mrep.Count > 0;
+                }
+                btnHorizonStart.Enabled = hasReports;
+                btnHorizonStart.BackColor = hasReports ? MainV2.OdinTheme.Green : Color.FromArgb(80, 20, 20, 20);
+                btnHorizonCancel.Enabled = true;
+
+                // Sync progress bar
+                int progressWidth = (pnlProgressBarTrack.Width * maxPct) / 100;
+                pnlProgressBarFill.Width = progressWidth;
+                pnlProgressBarFill.BackColor = MainV2.OdinTheme.Green;
+                lblProgressPct.Text = $"{maxPct}%";
+
+                int samples = (maxPct * 400) / 100;
+                lblSamplesCollected.Text = $"{samples} / 400";
+            }
+            else
+            {
+                bool isCalibrated = false;
+                if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_OFS_X"))
+                {
+                    int ox = (int)MainV2.comPort.MAV.param["COMPASS_OFS_X"];
+                    int oy = (int)MainV2.comPort.MAV.param["COMPASS_OFS_Y"];
+                    int oz = (int)MainV2.comPort.MAV.param["COMPASS_OFS_Z"];
+                    isCalibrated = (ox != 0 || oy != 0 || oz != 0);
+                }
+
+                if (isCalibrated)
+                {
+                    lblStatusBadge.Text = "STATUS: CALIBRATED";
+                    lblStatusBadge.BackColor = Color.FromArgb(12, 35, 12);
+                    lblStatusBadge.ForeColor = MainV2.OdinTheme.Green;
+                }
+                else
+                {
+                    lblStatusBadge.Text = "STATUS: CALIBRATION REQUIRED";
+                    lblStatusBadge.BackColor = Color.FromArgb(60, 45, 0);
+                    lblStatusBadge.ForeColor = MainV2.OdinTheme.Orange;
+                }
+
+                lblVisualizerStatus.Text = "AWAITING ROTATION";
+                lblVisualizerStatus.ForeColor = Color.FromArgb(120, 130, 140);
+
+                btnHorizonStart.Text = "START CALIBRATION";
+                btnHorizonStart.Enabled = true;
+                btnHorizonStart.BackColor = MainV2.OdinTheme.Green;
+                btnHorizonCancel.Enabled = false;
+
+                pnlProgressBarFill.Width = 0;
+                lblProgressPct.Text = "0%";
+                lblSamplesCollected.Text = "0 / 400";
+            }
+
+            // Force repaint on procedure circles to toggle colors
+            lblStep1Circle.Invalidate();
+            lblStep2Circle.Invalidate();
+            lblStep3Circle.Invalidate();
+        }
+
+        private void but_largemagcal_Click(object sender, EventArgs e)
+        {
         }
     }
 }

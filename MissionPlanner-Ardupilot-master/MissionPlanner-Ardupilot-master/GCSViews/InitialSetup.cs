@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using MissionPlanner.ArduPilot;
 using MissionPlanner.Controls;
 using MissionPlanner.Controls.BackstageView;
@@ -155,6 +155,9 @@ namespace MissionPlanner.GCSViews
         private void HardwareConfig_Load(object sender, EventArgs e)
         {
             ResourceManager rm = new ResourceManager(this.GetType());
+
+            // Add the Setup Overview Dashboard at the top
+            AddBackstageViewPage(typeof(ConfigSetupOverview), "Overview");
 
             if (!gotAllParams)
             {

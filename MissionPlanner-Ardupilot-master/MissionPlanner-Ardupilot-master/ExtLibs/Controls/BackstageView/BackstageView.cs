@@ -446,6 +446,16 @@ namespace MissionPlanner.Controls.BackstageView
                 return;
             }
 
+            // Hide the left menu panel if the Setup Overview dashboard page is active
+            if (associatedPage.Page != null && associatedPage.Page.GetType().Name == "ConfigSetupOverview")
+            {
+                pnlMenu.Visible = false;
+            }
+            else
+            {
+                pnlMenu.Visible = true;
+            }
+
             Tracking?.Invoke(associatedPage.Page.GetType().ToString(), associatedPage.LinkText);
 
             var start = DateTime.Now;

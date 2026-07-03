@@ -30,13 +30,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
         public void Activate()
         {
-            if (!MainV2.comPort.BaseStream.IsOpen)
-            {
-                Enabled = false;
-                return;
-            }
             Enabled = true;
-
             startup = true;
 
             this.Controls.Clear();
@@ -46,18 +40,17 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             }
             this.Controls.Add(pnlHorizonContainer);
 
-            if (MainV2.comPort.MAV.param["COMPASS_CAL_FIT"] != null)
+            try
             {
-                try
+                if (MainV2.comPort.MAV.param["COMPASS_CAL_FIT"] != null)
                 {
                     float fit = (float)MainV2.comPort.MAV.param["COMPASS_CAL_FIT"].Value;
                     chkFitnessStrict.Checked = (fit >= 16);
                 }
-                catch { }
             }
+            catch { }
 
             UpdateHorizonUI();
-
             startup = false;
         }
 
@@ -748,12 +741,14 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             btnHorizonCancel = new Button();
             btnHorizonCancel.Text = "CANCEL";
             StyleHelper.ApplyButtonStyle(btnHorizonCancel, false);
+            btnHorizonCancel.Size = new Size(110, 32);
             btnHorizonCancel.Click += (s, e) => BUT_OBmagcalcancel_Click(null, null);
             pnlProgress.Controls.Add(btnHorizonCancel);
 
             btnHorizonStart = new Button();
             btnHorizonStart.Text = "START CALIBRATION";
             StyleHelper.ApplyButtonStyle(btnHorizonStart, true);
+            btnHorizonStart.Size = new Size(190, 32);
             btnHorizonStart.Click += BtnHorizonStart_Click;
             pnlProgress.Controls.Add(btnHorizonStart);
 
@@ -924,8 +919,8 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             lblProgressPct.Location = new Point(pnlProgressBarTrack.Right + 12, 52);
 
             chkFitnessStrict.Location = new Point(16, 95);
-            btnHorizonCancel.Location = new Point(pnlProgress.Width - 290, 90);
-            btnHorizonStart.Location = new Point(pnlProgress.Width - 176, 90);
+            btnHorizonCancel.Location = new Point(pnlProgress.Width - 320, 90);
+            btnHorizonStart.Location = new Point(pnlProgress.Width - 206, 90);
         }
 
         private void LayoutStep(Label circle, Label title, Label desc, int x, int y)

@@ -196,7 +196,7 @@ namespace MissionPlanner.GCSViews
 
             if (MainV2.DisplayConfiguration.displayAccelCalibration)
             {
-                AddBackstageViewPage(typeof(ConfigAccelerometerCalibration), rm.GetString("backstageViewPageaccel.Text"), isConnected && gotAllParams, mand);
+                AddBackstageViewPage(typeof(ConfigAccelerometerCalibration), rm.GetString("backstageViewPageaccel.Text"), true, mand);
             }
 
 
@@ -204,14 +204,14 @@ namespace MissionPlanner.GCSViews
             {
                 if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_PRIO1_ID"))
                     AddBackstageViewPage(typeof(ConfigHWCompass2), rm.GetString("backstageViewPagecompass.Text"),
-                        isConnected && gotAllParams, mand);
+                        true, mand);
                 else
                     AddBackstageViewPage(typeof(ConfigHWCompass), rm.GetString("backstageViewPagecompass.Text"),
-                        isConnected && gotAllParams, mand);
+                        true, mand);
             }
             if (MainV2.DisplayConfiguration.displayRadioCalibration)
             {
-                AddBackstageViewPage(typeof(ConfigRadioInput), rm.GetString("backstageViewPageradio.Text"), isConnected && gotAllParams, mand);
+                AddBackstageViewPage(typeof(ConfigRadioInput), rm.GetString("backstageViewPageradio.Text"), true, mand);
             }
             if (MainV2.DisplayConfiguration.displayServoOutput)
             {
@@ -385,12 +385,25 @@ namespace MissionPlanner.GCSViews
             }
 
             // remeber last page accessed
+            bool activated = false;
             foreach (BackstageViewPage page in backstageView.Pages)
             {
                 if (page.LinkText == lastpagename && page.Show)
                 {
                     backstageView.ActivatePage(page);
+                    activated = true;
                     break;
+                }
+            }
+            if (!activated && backstageView.Pages.Count > 0)
+            {
+                foreach (BackstageViewPage page in backstageView.Pages)
+                {
+                    if (page.Show)
+                    {
+                        backstageView.ActivatePage(page);
+                        break;
+                    }
                 }
             }
 

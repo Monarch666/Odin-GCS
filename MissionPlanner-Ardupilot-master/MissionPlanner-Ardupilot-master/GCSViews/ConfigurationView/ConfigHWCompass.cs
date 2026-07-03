@@ -621,22 +621,20 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private void CreateHorizonLayout()
         {
             pnlHorizonContainer = new Panel();
-            pnlHorizonContainer.BackColor = MainV2.OdinTheme.Background;
-            pnlHorizonContainer.ForeColor = MainV2.OdinTheme.White;
+            pnlHorizonContainer.BackColor = Theme.Background;
+            pnlHorizonContainer.ForeColor = Theme.White;
 
             // Title
             lblHorizonTitle = new Label();
             lblHorizonTitle.Text = "Compass Calibration";
-            lblHorizonTitle.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
-            lblHorizonTitle.ForeColor = MainV2.OdinTheme.White;
+            StyleHelper.ApplyLabelStyle(lblHorizonTitle, Theme.HeaderFont, Theme.White);
             lblHorizonTitle.AutoSize = true;
             pnlHorizonContainer.Controls.Add(lblHorizonTitle);
 
             // Subtitle
             lblHorizonSubtitle = new Label();
             lblHorizonSubtitle.Text = "Align the internal and external magnetometers to ensure accurate heading estimation during flight.\nRequired after hardware changes or significant location shifts.";
-            lblHorizonSubtitle.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
-            lblHorizonSubtitle.ForeColor = Color.FromArgb(170, 175, 180);
+            StyleHelper.ApplyLabelStyle(lblHorizonSubtitle, Theme.SubtitleFont, Theme.GreyText);
             lblHorizonSubtitle.AutoSize = true;
             pnlHorizonContainer.Controls.Add(lblHorizonSubtitle);
 
@@ -645,7 +643,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             lblStatusBadge.Text = "STATUS: CALIBRATION REQUIRED";
             lblStatusBadge.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblStatusBadge.BackColor = Color.FromArgb(60, 45, 0);
-            lblStatusBadge.ForeColor = MainV2.OdinTheme.Orange;
+            lblStatusBadge.ForeColor = Theme.AccentOrange;
             lblStatusBadge.BorderStyle = BorderStyle.FixedSingle;
             lblStatusBadge.TextAlign = ContentAlignment.MiddleCenter;
             lblStatusBadge.Size = new Size(240, 32);
@@ -703,7 +701,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             lblSamplesCollected = new Label();
             lblSamplesCollected.Text = "0 / 400";
             lblSamplesCollected.Font = new Font("Consolas", 18F, FontStyle.Bold);
-            lblSamplesCollected.ForeColor = MainV2.OdinTheme.White;
+            lblSamplesCollected.ForeColor = Theme.White;
             lblSamplesCollected.AutoSize = true;
             pnlOffsets.Controls.Add(lblSamplesHeader);
             pnlOffsets.Controls.Add(lblSamplesCollected);
@@ -711,8 +709,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             // --- Why child controls ---
             var lblWhyText = new Label();
             lblWhyText.Text = "An uncalibrated compass can lead to erratic flight behavior, 'toilet-bowling' in Loiter mode, or complete loss of autonomous navigation capability.";
-            lblWhyText.Font = new Font("Segoe UI", 9.5F);
-            lblWhyText.ForeColor = Color.FromArgb(170, 175, 180);
+            StyleHelper.ApplyLabelStyle(lblWhyText, Theme.RegularFont, Theme.GreyText);
             lblWhyText.Location = new Point(16, 45);
             lblWhyText.Size = new Size(240, 100);
             pnlWhy.Controls.Add(lblWhyText);
@@ -731,50 +728,32 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             pnlProgress.Controls.Add(pnlProgressBarTrack);
 
             pnlProgressBarFill = new Panel();
-            pnlProgressBarFill.BackColor = MainV2.OdinTheme.Green;
+            pnlProgressBarFill.BackColor = Theme.AccentOrange;
             pnlProgressBarFill.Height = 10;
             pnlProgressBarTrack.Controls.Add(pnlProgressBarFill);
 
             lblProgressPct = new Label();
             lblProgressPct.Text = "0%";
             lblProgressPct.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            lblProgressPct.ForeColor = MainV2.OdinTheme.Green;
+            lblProgressPct.ForeColor = Theme.AccentOrange;
             lblProgressPct.AutoSize = true;
             pnlProgress.Controls.Add(lblProgressPct);
 
             chkFitnessStrict = new CheckBox();
             chkFitnessStrict.Text = "Fitness: Strict";
-            chkFitnessStrict.Font = new Font("Segoe UI", 9.5F);
-            chkFitnessStrict.ForeColor = MainV2.OdinTheme.White;
-            chkFitnessStrict.FlatStyle = FlatStyle.Flat;
-            chkFitnessStrict.FlatAppearance.BorderColor = MainV2.OdinTheme.Border;
-            chkFitnessStrict.AutoSize = true;
-            chkFitnessStrict.Cursor = Cursors.Hand;
+            StyleHelper.ApplyCheckboxStyle(chkFitnessStrict);
             chkFitnessStrict.CheckedChanged += ChkFitnessStrict_CheckedChanged;
             pnlProgress.Controls.Add(chkFitnessStrict);
 
             btnHorizonCancel = new Button();
             btnHorizonCancel.Text = "CANCEL";
-            btnHorizonCancel.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnHorizonCancel.ForeColor = Color.FromArgb(180, 70, 70);
-            btnHorizonCancel.BackColor = Color.Transparent;
-            btnHorizonCancel.FlatStyle = FlatStyle.Flat;
-            btnHorizonCancel.FlatAppearance.BorderColor = Color.FromArgb(180, 70, 70);
-            btnHorizonCancel.FlatAppearance.BorderSize = 1;
-            btnHorizonCancel.Size = new Size(110, 32);
-            btnHorizonCancel.Cursor = Cursors.Hand;
+            StyleHelper.ApplyButtonStyle(btnHorizonCancel, false);
             btnHorizonCancel.Click += (s, e) => BUT_OBmagcalcancel_Click(null, null);
             pnlProgress.Controls.Add(btnHorizonCancel);
 
             btnHorizonStart = new Button();
             btnHorizonStart.Text = "START CALIBRATION";
-            btnHorizonStart.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            btnHorizonStart.ForeColor = Color.Black;
-            btnHorizonStart.BackColor = MainV2.OdinTheme.Green;
-            btnHorizonStart.FlatStyle = FlatStyle.Flat;
-            btnHorizonStart.FlatAppearance.BorderSize = 0;
-            btnHorizonStart.Size = new Size(160, 32);
-            btnHorizonStart.Cursor = Cursors.Hand;
+            StyleHelper.ApplyButtonStyle(btnHorizonStart, true);
             btnHorizonStart.Click += BtnHorizonStart_Click;
             pnlProgress.Controls.Add(btnHorizonStart);
 
@@ -810,9 +789,11 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         private Panel CreatePanel(string panelTag)
         {
             Panel p = new Panel();
-            p.BackColor = MainV2.OdinTheme.Panel;
-            p.Tag = panelTag;
-            p.Paint += PaintHorizonPanel;
+            string[] tags = panelTag.Split('|');
+            string title = tags.Length > 0 ? tags[0] : "";
+            string sysTag = tags.Length > 1 ? tags[1] : "";
+            
+            StyleHelper.ApplyPanelStyle(p, title, sysTag);
             pnlHorizonContainer.Controls.Add(p);
             return p;
         }
@@ -831,8 +812,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             Label lbl = new Label();
             lbl.Text = text;
-            lbl.Font = new Font("Segoe UI", 11F, FontStyle.Bold);
-            lbl.ForeColor = MainV2.OdinTheme.White;
+            StyleHelper.ApplyLabelStyle(lbl, Theme.TitleFont, Theme.White);
             lbl.AutoSize = true;
             return lbl;
         }
@@ -841,8 +821,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             Label lbl = new Label();
             lbl.Text = text;
-            lbl.Font = new Font("Segoe UI", 9.5F);
-            lbl.ForeColor = Color.FromArgb(140, 145, 150);
+            StyleHelper.ApplyLabelStyle(lbl, Theme.RegularFont, Color.FromArgb(140, 145, 150));
             lbl.AutoSize = true;
             return lbl;
         }
@@ -851,8 +830,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             Label lbl = new Label();
             lbl.Text = text;
-            lbl.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
-            lbl.ForeColor = Color.FromArgb(120, 130, 140);
+            StyleHelper.ApplyLabelStyle(lbl, Theme.RegularFont, Color.FromArgb(120, 130, 140));
             lbl.AutoSize = true;
             return lbl;
         }
@@ -861,60 +839,9 @@ namespace MissionPlanner.GCSViews.ConfigurationView
         {
             Label lbl = new Label();
             lbl.Text = text;
-            lbl.Font = new Font("Consolas", 11F, isVal ? FontStyle.Bold : FontStyle.Regular);
-            lbl.ForeColor = isVal ? MainV2.OdinTheme.Green : Color.FromArgb(140, 145, 150);
+            StyleHelper.ApplyLabelStyle(lbl, Theme.TechnicalFont, isVal ? Theme.AccentOrange : Color.FromArgb(140, 145, 150));
             lbl.AutoSize = true;
             return lbl;
-        }
-
-        private void PaintHorizonPanel(object sender, PaintEventArgs e)
-        {
-            Panel p = sender as Panel;
-            if (p == null) return;
-
-            Graphics g = e.Graphics;
-            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-            using (var borderPen = new Pen(MainV2.OdinTheme.Border, 1))
-            {
-                g.DrawRectangle(borderPen, 0, 0, p.Width - 1, p.Height - 1);
-            }
-
-            string[] tags = (p.Tag as string ?? "").Split('|');
-            string title = tags.Length > 0 ? tags[0] : "";
-            string sysTag = tags.Length > 1 ? tags[1] : "";
-
-            if (!string.IsNullOrEmpty(title))
-            {
-                using (var titleFont = new Font("Segoe UI", 11F, FontStyle.Bold))
-                using (var tagFont = new Font("Consolas", 8F, FontStyle.Bold))
-                using (var titleBrush = new SolidBrush(MainV2.OdinTheme.White))
-                using (var tagBrush = new SolidBrush(Color.FromArgb(100, 110, 120)))
-                {
-                    g.DrawString(title, titleFont, titleBrush, 16, 12);
-
-                    if (!string.IsNullOrEmpty(sysTag))
-                    {
-                        string fullTag = $"[ {sysTag} ]";
-                        SizeF tagSize = g.MeasureString(fullTag, tagFont);
-                        g.DrawString(fullTag, tagFont, tagBrush, p.Width - tagSize.Width - 16, 15);
-                    }
-                }
-            }
-
-            if (p.Name == "pnlVisualizer" || p == pnlVisualizer)
-            {
-                int centerX = p.Width / 2;
-                int centerY = p.Height / 2;
-                int radius = 70;
-
-                using (var pen = new Pen(Color.FromArgb(50, MainV2.OdinTheme.Green), 1))
-                {
-                    g.DrawEllipse(pen, centerX - radius, centerY - radius, radius * 2, radius * 2);
-                    g.DrawLine(pen, centerX - radius - 15, centerY, centerX + radius + 15, centerY);
-                    g.DrawLine(pen, centerX, centerY - radius - 15, centerX, centerY + radius + 15);
-                }
-            }
         }
 
         private void PaintStepCircle(object sender, PaintEventArgs e)
@@ -926,7 +853,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             bool isActive = (lbl.Name == "lblCircle1" && !timer1.Enabled) || (lbl.Name == "lblCircle3" && timer1.Enabled);
-            Color circleColor = isActive ? MainV2.OdinTheme.Green : Color.FromArgb(40, 45, 50);
+            Color circleColor = isActive ? Theme.AccentOrange : Color.FromArgb(40, 45, 50);
 
             using (var brush = new SolidBrush(circleColor))
             {
@@ -1092,10 +1019,10 @@ namespace MissionPlanner.GCSViews.ConfigurationView
             {
                 lblStatusBadge.Text = "STATUS: CALIBRATING";
                 lblStatusBadge.BackColor = Color.FromArgb(60, 45, 0);
-                lblStatusBadge.ForeColor = MainV2.OdinTheme.Orange;
+                lblStatusBadge.ForeColor = Theme.AccentOrange;
 
                 lblVisualizerStatus.Text = "CALIBRATING...\nROTATING VEHICLE";
-                lblVisualizerStatus.ForeColor = MainV2.OdinTheme.Green;
+                lblVisualizerStatus.ForeColor = Theme.AccentOrange;
 
                 btnHorizonStart.Text = "ACCEPT CALIBRATION";
                 bool hasReports = false;
@@ -1104,13 +1031,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                     hasReports = mrep.Count > 0;
                 }
                 btnHorizonStart.Enabled = hasReports;
-                btnHorizonStart.BackColor = hasReports ? MainV2.OdinTheme.Green : Color.FromArgb(80, 20, 20, 20);
+                btnHorizonStart.BackColor = hasReports ? Theme.AccentOrange : Color.FromArgb(80, 20, 20, 20);
                 btnHorizonCancel.Enabled = true;
 
                 // Sync progress bar
                 int progressWidth = (pnlProgressBarTrack.Width * maxPct) / 100;
                 pnlProgressBarFill.Width = progressWidth;
-                pnlProgressBarFill.BackColor = MainV2.OdinTheme.Green;
+                pnlProgressBarFill.BackColor = Theme.AccentOrange;
                 lblProgressPct.Text = $"{maxPct}%";
 
                 int samples = (maxPct * 400) / 100;
@@ -1131,13 +1058,13 @@ namespace MissionPlanner.GCSViews.ConfigurationView
                 {
                     lblStatusBadge.Text = "STATUS: CALIBRATED";
                     lblStatusBadge.BackColor = Color.FromArgb(12, 35, 12);
-                    lblStatusBadge.ForeColor = MainV2.OdinTheme.Green;
+                    lblStatusBadge.ForeColor = Theme.Green;
                 }
                 else
                 {
                     lblStatusBadge.Text = "STATUS: CALIBRATION REQUIRED";
                     lblStatusBadge.BackColor = Color.FromArgb(60, 45, 0);
-                    lblStatusBadge.ForeColor = MainV2.OdinTheme.Orange;
+                    lblStatusBadge.ForeColor = Theme.AccentOrange;
                 }
 
                 lblVisualizerStatus.Text = "AWAITING ROTATION";
@@ -1145,7 +1072,7 @@ namespace MissionPlanner.GCSViews.ConfigurationView
 
                 btnHorizonStart.Text = "START CALIBRATION";
                 btnHorizonStart.Enabled = true;
-                btnHorizonStart.BackColor = MainV2.OdinTheme.Green;
+                btnHorizonStart.BackColor = Theme.AccentOrange;
                 btnHorizonCancel.Enabled = false;
 
                 pnlProgressBarFill.Width = 0;

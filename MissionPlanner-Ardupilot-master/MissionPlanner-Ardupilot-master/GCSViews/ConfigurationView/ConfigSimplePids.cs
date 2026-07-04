@@ -1,4 +1,4 @@
-﻿using log4net;
+using log4net;
 using MissionPlanner.Controls;
 using MissionPlanner.Utilities;
 using System;
@@ -8,235 +8,216 @@ using System.Globalization;
 using System.Reflection;
 using System.Windows.Forms;
 using System.Xml;
+using System.Runtime.InteropServices;
+using Newtonsoft.Json;
+using System.IO;
+using System.Diagnostics;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
+    [ComVisible(true)]
     public partial class ConfigSimplePids : MyUserControl, IActivate
     {
         internal static readonly ILog log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-        private List<configitem> piditems = new List<configitem>();
-        private int y = 10;
+
+        private WebBrowser webBrowser;
 
         public ConfigSimplePids()
         {
             InitializeComponent();
         }
 
-        public void Activate()
-        {
-            // prevent memory leak
-            foreach (Control ctl in panel1.Controls)
-            {
-                ctl.Dispose();
-            }
-
-            y = 10;
-
-            LoadXML(Settings.GetRunningDirectory() + "acsimplepids.xml");
-        }
-
         private void ConfigSimplePids_Load(object sender, EventArgs e)
         {
+            // Handled by Activate() call from host framework
         }
 
-        /// <summary>
-        ///     The template xml for the screen
-        /// </summary>
-        /// <param name="FileName"></param>
-        public void LoadXML(string FileName)
+        public void Activate()
         {
-            using (var reader = XmlReader.Create(FileName))
+            SetBrowserFeatureControl();
+
+            if (webBrowser == null)
             {
-                reader.Read();
-                reader.ReadStartElement("simple");
+                this.Controls.Clear();
+                webBrowser = new WebBrowser();
+                webBrowser.Dock = DockStyle.Fill;
+                webBrowser.ScriptErrorsSuppressed = true;
+                webBrowser.ObjectForScripting = this;
+                webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
+                this.Controls.Add(webBrowser);
 
-                while (!reader.EOF)
+                string htmlPath = Path.Combine(Settings.GetRunningDirectory(), "tuning_manager.html");
+                if (!File.Exists(htmlPath))
                 {
-                    reader.ReadToFollowing("ac");
-
-                    if (reader.Name == "")
-                        break;
-
-                    var acinner = reader.ReadSubtree();
-
-                    while (acinner.ReadToFollowing("param"))
+                    string sourcePath = Path.Combine(Application.StartupPath, "..", "..", "tuning_manager.html");
+                    if (File.Exists(sourcePath))
                     {
-                        var inner = acinner.ReadSubtree();
-
-                        var item = new configitem();
-
-                        while (inner.Read())
+                        try
                         {
-                            inner.MoveToElement();
-                            if (inner.IsStartElement())
-                            {
-                                switch (inner.Name.ToLower())
-                                {
-                                    case "title":
-                                        item.title = inner.ReadString();
-                                        break;
-                                    case "desc":
-                                        item.desc = inner.ReadString();
-                                        break;
-                                    case "name":
-                                        item.paramname = inner.ReadString();
-                                        break;
-                                    case "value":
-                                        item.paramvalue = float.Parse(inner.ReadString(), NumberFormatInfo.InvariantInfo);
-                                        break;
-                                    case "min":
-                                        item.min = float.Parse(inner.ReadString(), NumberFormatInfo.InvariantInfo);
-                                        break;
-                                    case "max":
-                                        item.max = float.Parse(inner.ReadString(), NumberFormatInfo.InvariantInfo);
-                                        break;
-                                    case "relation":
-                                        var relation = reader.ReadSubtree();
-                                        var relitem = new relationitem();
-                                        while (relation.Read())
-                                        {
-                                            relation.MoveToElement();
-                                            if (relation.Name == "param")
-                                            {
-                                                relitem.paramaname = inner.ReadString();
-                                            }
-                                            else if (relation.Name == "multiplier")
-                                            {
-                                                relitem.multiplier = float.Parse(inner.ReadString(),
-                                                    NumberFormatInfo.InvariantInfo);
-                                            }
-                                        }
-
-                                        item.relations.Add(relitem);
-                                        break;
-                                }
-                            }
+                            File.Copy(sourcePath, htmlPath, true);
                         }
-                        // process item to screen
-                        ProcessItem(item);
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Failed to copy tuning_manager.html: " + ex.Message);
+                        }
+                    }
+                }
+
+                webBrowser.Navigate(htmlPath);
+            }
+        }
+
+        private void WebBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            TriggerReload();
+        }
+
+        private void TriggerReload()
+        {
+            if (webBrowser != null && webBrowser.ReadyState == WebBrowserReadyState.Complete)
+            {
+                webBrowser.Document.InvokeScript("onParamsLoaded", new object[] { GetTuningParams() });
+            }
+        }
+
+        // --- BASIC TUNING BRIDGE METHODS ---
+
+        public string GetSystemStatus()
+        {
+            try
+            {
+                bool connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+                string firmware = connected ? MainV2.comPort.MAV.cs.firmware.ToString() : "OFFLINE";
+                string port = connected ? MainV2.comPort.BaseStream.PortName : "";
+                string baud = connected ? MainV2.comPort.BaseStream.BaudRate.ToString() : "";
+
+                var status = new
+                {
+                    connected = connected,
+                    firmware = firmware,
+                    port = port,
+                    baud = baud
+                };
+                return JsonConvert.SerializeObject(status);
+            }
+            catch (Exception ex)
+            {
+                return "{\"connected\":false,\"firmware\":\"OFFLINE\",\"port\":\"\",\"baud\":\"\"}";
+            }
+        }
+
+        public string GetTuningParams()
+        {
+            try
+            {
+                bool connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+                var paramCache = MainV2.comPort.MAV.param;
+
+                double atcInputTc = paramCache.ContainsKey("ATC_INPUT_TC") ? (double)paramCache["ATC_INPUT_TC"].Value : 0.15;
+                double atcRatRllP = paramCache.ContainsKey("ATC_RAT_RLL_P") ? (double)paramCache["ATC_RAT_RLL_P"].Value : 0.135;
+                double atcRatPitP = paramCache.ContainsKey("ATC_RAT_PIT_P") ? (double)paramCache["ATC_RAT_PIT_P"].Value : 0.135;
+                double atcRatYawP = paramCache.ContainsKey("ATC_RAT_YAW_P") ? (double)paramCache["ATC_RAT_YAW_P"].Value : 0.20;
+
+                var data = new
+                {
+                    connected = connected,
+                    ATC_INPUT_TC = atcInputTc,
+                    ATC_RAT_RLL_P = atcRatRllP,
+                    ATC_RAT_PIT_P = atcRatPitP,
+                    ATC_RAT_YAW_P = atcRatYawP,
+                    vehicle = MainV2.comPort.MAV.cs.firmware.ToString()
+                };
+
+                return JsonConvert.SerializeObject(data);
+            }
+            catch (Exception ex)
+            {
+                return "{}";
+            }
+        }
+
+        public bool SaveTuningParams(string paramsJson)
+        {
+            try
+            {
+                var dict = JsonConvert.DeserializeObject<Dictionary<string, double>>(paramsJson);
+                if (dict == null) return false;
+
+                foreach (var kvp in dict)
+                {
+                    string name = kvp.Key;
+                    float value = (float)kvp.Value;
+
+                    MainV2.comPort.setParam(name, value);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public bool BackupParams(string paramsJson)
+        {
+            try
+            {
+                using (var sfd = new SaveFileDialog())
+                {
+                    sfd.Filter = "JSON Profile (*.json)|*.json";
+                    sfd.FileName = "tuning_profile_backup.json";
+                    if (sfd.ShowDialog() == DialogResult.OK)
+                    {
+                        File.WriteAllText(sfd.FileName, paramsJson);
+                        return true;
+                    }
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public string ImportProfile()
+        {
+            try
+            {
+                using (var ofd = new OpenFileDialog())
+                {
+                    ofd.Filter = "JSON Profile (*.json)|*.json";
+                    if (ofd.ShowDialog() == DialogResult.OK)
+                    {
+                        return File.ReadAllText(ofd.FileName);
+                    }
+                }
+                return "";
+            }
+            catch (Exception ex)
+            {
+                return "";
+            }
+        }
+
+        private void SetBrowserFeatureControl()
+        {
+            try
+            {
+                string fileName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION"))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue(fileName, 11001, Microsoft.Win32.RegistryValueKind.DWord);
                     }
                 }
             }
-        }
-
-        private void ProcessItem(configitem item)
-        {
-            try
-            {
-                if (!MainV2.comPort.MAV.param.ContainsKey(item.paramname))
-                    return;
-
-                var value = (float)MainV2.comPort.MAV.param[item.paramname];
-
-                if (value < item.min)
-                    item.min = value;
-                if (value > item.max)
-                    item.max = value;
-
-                var range = ParameterMetaDataRepository.GetParameterMetaData(item.paramname,
-                    ParameterMetaDataConstants.Range, MainV2.comPort.MAV.cs.firmware.ToString());
-                var increment = ParameterMetaDataRepository.GetParameterMetaData(item.paramname,
-                    ParameterMetaDataConstants.Increment, MainV2.comPort.MAV.cs.firmware.ToString());
-
-                var rangeopt = range.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-                if (rangeopt.Length > 1)
-                {
-                    item.min = float.Parse(rangeopt[0], CultureInfo.InvariantCulture);
-                    item.max = float.Parse(rangeopt[1], CultureInfo.InvariantCulture);
-                }
-
-                var incrementf = 0.01f;
-                if (increment.Length > 0)
-                    float.TryParse(increment, NumberStyles.Float, CultureInfo.InvariantCulture, out incrementf);
-
-                var RNG = new RangeControl(item.paramname, item.desc, item.title, incrementf, 1, item.min, item.max,
-                    value.ToString());
-                RNG.Tag = item;
-
-                RNG.Location = new Point(10, y);
-
-                RNG.AttachEvents();
-
-                RNG.ValueChanged += RNG_ValueChanged;
-
-                ThemeManager.ApplyThemeTo(RNG);
-
-                panel1.Controls.Add(RNG);
-
-                y += RNG.Height;
-            }
             catch (Exception ex)
             {
-                CustomMessageBox.Show("Failed to process " + item.paramname + "\n" + ex);
+                Console.WriteLine("Failed to set FEATURE_BROWSER_EMULATION in registry: " + ex.Message);
             }
-        }
-
-        private void RNG_ValueChanged(object sender, string Name, string Value)
-        {
-            TXT_info.Clear();
-
-            if (Value.Contains(","))
-                Value = Value.Replace(",", ".");
-
-            var value = float.Parse(Value, CultureInfo.InvariantCulture);
-
-            var rc = ((RangeControl)sender);
-            log.Info(rc.Name + " " + rc.Value);
-
-            var relitems = ((configitem)rc.Tag).relations;
-
-            try
-            {
-                MainV2.comPort.setParam(rc.Name, value);
-            }
-            catch (Exception ex)
-            {
-                CustomMessageBox.Show("Failed to change setting " + ex.Message);
-                return;
-            }
-            TXT_info.AppendText("set " + rc.Name + " " + rc.Value + "\r\n");
-
-            foreach (var item in relitems)
-            {
-                try
-                {
-                    MainV2.comPort.setParam(item.paramaname, value * item.multiplier);
-                    TXT_info.AppendText("set " + item.paramaname + " " + value * item.multiplier + "\r\n");
-                }
-                catch (Exception ex)
-                {
-                    CustomMessageBox.Show("Failed to change setting " + ex.Message);
-                    return;
-                }
-            }
-        }
-
-        private class configitem : IDisposable
-        {
-            public readonly Label lbl_max = new Label();
-            public readonly Label lbl_min = new Label();
-            public readonly List<relationitem> relations = new List<relationitem>();
-            public string desc;
-            public float max;
-            public float min;
-            public string paramname;
-            public float paramvalue;
-            public string title;
-            // use increments
-
-
-            public void Dispose()
-            {
-                lbl_max.Dispose();
-                lbl_min.Dispose();
-            }
-        }
-
-        private class relationitem
-        {
-            public float multiplier;
-            public string paramaname;
         }
     }
 }

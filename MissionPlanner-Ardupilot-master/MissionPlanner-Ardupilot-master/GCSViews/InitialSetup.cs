@@ -190,12 +190,11 @@ namespace MissionPlanner.GCSViews
 
             if (MainV2.DisplayConfiguration.displayCompassConfiguration)
             {
-                if (MainV2.comPort.MAV.param.ContainsKey("COMPASS_PRIO1_ID"))
-                    AddBackstageViewPage(typeof(ConfigHWCompass2), rm.GetString("backstageViewPagecompass.Text"),
-                        true, mand);
-                else
-                    AddBackstageViewPage(typeof(ConfigHWCompass), rm.GetString("backstageViewPagecompass.Text"),
-                        true, mand);
+                // Always use ConfigHWCompass (modern Horizon UI) regardless of firmware version.
+                // ConfigHWCompass2 was loaded when COMPASS_PRIO1_ID existed (newer firmware),
+                // but this caused an inconsistent UI between connected and disconnected states.
+                AddBackstageViewPage(typeof(ConfigHWCompass), rm.GetString("backstageViewPagecompass.Text"),
+                    true, mand);
             }
             if (MainV2.DisplayConfiguration.displayRadioCalibration)
             {

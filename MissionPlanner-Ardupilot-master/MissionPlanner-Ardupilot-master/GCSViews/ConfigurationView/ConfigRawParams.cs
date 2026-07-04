@@ -18,99 +18,331 @@ using System.Timers;
 using System.Windows.Forms;
 using org.mariuszgromada.math.mxparser;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Newtonsoft.Json;
 
 namespace MissionPlanner.GCSViews.ConfigurationView
 {
+    [ComVisible(true)]
     public partial class ConfigRawParams : MyUserControl, IActivate, IDeactivate
     {
-        // from http://stackoverflow.com/questions/2512781/winforms-big-paragraph-tooltip/2512895#2512895
         private const int maximumSingleLineTooltipLength = 50;
 
         private static readonly ILog log =
             LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private static Hashtable tooltips = new Hashtable();
-        // Changes made to the params between writing to the copter
         private readonly Hashtable _changes = new Hashtable();
         private static List<GitHubContent.FileInfo> paramfiles;
-        // ?
         internal static bool startup = true;
         internal static List<DataGridViewRow> rowlist = new List<DataGridViewRow>();
-
-        // Used by Param Tree to filter by prefix
         private string filterPrefix = "";
-
         private NaturalStringComparer naturalsorter = new NaturalStringComparer();
+
+        private WebBrowser webBrowser;
 
         public ConfigRawParams()
         {
             InitializeComponent();
         }
 
-        public void Activate()
+        private static void SetBrowserFeatureControl()
         {
-            if ((rowlist.Count == 0) || (!Settings.Instance.GetBoolean("SlowMachine", false))) startup = true;
-            //If we connected to another vehicle the do a full refresh
-            if (rowlist.Count != MainV2.comPort.MAV.param.Count()) startup = true;
-
-            _changes.Clear();
-
-            BUT_writePIDS.Enabled = MainV2.comPort.BaseStream.IsOpen;
-            BUT_rerequestparams.Enabled = MainV2.comPort.BaseStream.IsOpen;
-            BUT_reset_params.Enabled = MainV2.comPort.BaseStream.IsOpen;
-            BUT_commitToFlash.Visible = MainV2.DisplayConfiguration.displayParamCommitButton;
-            BUT_refreshTable.Visible = Settings.Instance.GetBoolean("SlowMachine", false);
-
-            CMB_paramfiles.Enabled = false;
-            BUT_paramfileload.Enabled = false;
-            ThreadPool.QueueUserWorkItem(updatedefaultlist);
-
-            Params.Enabled = false;
-
-            foreach (DataGridViewColumn col in Params.Columns)
+            try
             {
-                // Don't need to size a fill column
-                if (col.AutoSizeMode == DataGridViewAutoSizeColumnMode.Fill) continue;
-
-                // Don't need to size a column that can't be resized
-                if (col.Resizable == DataGridViewTriState.False) continue;
-
-                if (!String.IsNullOrEmpty(Settings.Instance["rawparam_" + col.Name + "_width"]))
+                var appName = System.IO.Path.GetFileName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION", true))
                 {
-                    col.Width = (int)Math.Max(5, Settings.Instance.GetInt32("rawparam_" + col.Name + "_width"));
-                    log.InfoFormat("{0} to {1}", col.Name, col.Width);
+                    if (key != null)
+                    {
+                        key.SetValue(appName, 11001, Microsoft.Win32.RegistryValueKind.DWord);
+                    }
                 }
             }
-            splitContainer1.SplitterDistance = Settings.Instance.GetInt32("rawparam_splitterdistance", 180);
-            splitContainer1.Panel1Collapsed = Settings.Instance.GetBoolean("rawparam_panel1collapsed", false);
-            but_collapse.Text = splitContainer1.Panel1Collapsed ? ">" : "<";
+            catch (Exception ex)
+            {
+                log.Error("Failed to set browser emulation registry key: " + ex.Message);
+            }
+        }
 
-            processToScreen();
+        private void InitializeBrowser()
+        {
+            if (webBrowser != null) return;
 
-            Params.Enabled = true;
+            SetBrowserFeatureControl();
 
-            Common.MessageShowAgain(Strings.RawParamWarning, Strings.RawParamWarningi);
+            webBrowser = new WebBrowser();
+            webBrowser.Dock = DockStyle.Fill;
+            webBrowser.ScriptErrorsSuppressed = true;
+            webBrowser.ObjectForScripting = this;
+            webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
 
-            startup = false;
+            this.Controls.Clear();
+            this.Controls.Add(webBrowser);
 
-            txt_search.Focus();
+            string htmlPath = Path.Combine(Settings.GetRunningDirectory(), "parameter_manager.html");
+            if (!File.Exists(htmlPath))
+            {
+                string sourcePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../parameter_manager.html");
+                if (File.Exists(sourcePath))
+                {
+                    try
+                    {
+                        File.Copy(sourcePath, htmlPath, true);
+                    }
+                    catch (Exception ex)
+                    {
+                        log.Error("Failed to copy parameter_manager.html from source: " + ex.Message);
+                    }
+                }
+            }
+
+            webBrowser.Navigate(htmlPath);
+        }
+
+        private void WebBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            TriggerReload();
+        }
+
+        private void TriggerReload()
+        {
+            if (webBrowser != null && webBrowser.ReadyState == WebBrowserReadyState.Complete)
+            {
+                webBrowser.Document.InvokeScript("onParamsLoaded", new object[] { GetParametersJson() });
+                webBrowser.Document.InvokeScript("onStatusLoaded", new object[] { GetSystemStatus() });
+            }
+        }
+
+        public string GetParametersJson()
+        {
+            try
+            {
+                var list = new List<object>();
+                foreach (string key in MainV2.comPort.MAV.param.Keys)
+                {
+                    if (string.IsNullOrEmpty(key)) continue;
+
+                    var paramValue = MainV2.comPort.MAV.param[key];
+                    double val = (double)paramValue;
+                    string defaultValStr = paramValue.default_value.HasValue ? paramValue.default_value_to_string() : "NaN";
+
+                    string desc = ParameterMetaDataRepository.GetParameterMetaData(key,
+                        ParameterMetaDataConstants.Description, MainV2.comPort.MAV.cs.firmware.ToString()) ?? "";
+                    string range = ParameterMetaDataRepository.GetParameterMetaData(key,
+                        ParameterMetaDataConstants.Range, MainV2.comPort.MAV.cs.firmware.ToString()) ?? "";
+                    string options = ParameterMetaDataRepository.GetParameterMetaData(key,
+                        ParameterMetaDataConstants.Values, MainV2.comPort.MAV.cs.firmware.ToString()) ?? "";
+                    string units = ParameterMetaDataRepository.GetParameterMetaData(key,
+                        ParameterMetaDataConstants.Units, MainV2.comPort.MAV.cs.firmware.ToString()) ?? "";
+
+                    list.Add(new
+                    {
+                        name = key,
+                        value = val,
+                        defaultValue = defaultValStr,
+                        desc = desc,
+                        range = range,
+                        options = options,
+                        units = units
+                    });
+                }
+                return JsonConvert.SerializeObject(list);
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error generating parameters JSON: ", ex);
+                return "[]";
+            }
+        }
+
+        public string GetSystemStatus()
+        {
+            try
+            {
+                bool connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+                string firmware = connected ? MainV2.comPort.MAV.cs.firmware.ToString() : "OFFLINE";
+                string frame = connected ? MainV2.comPort.MAV.aptype.ToString() : "";
+                string link = connected ? MainV2.comPort.MAV.cs.linkqualitygcs.ToString() + "%" : "0%";
+                string port = connected ? MainV2.comPort.BaseStream.PortName : "";
+                string sysid = connected ? MainV2.comPort.MAV.sysid.ToString() : "0";
+
+                return JsonConvert.SerializeObject(new
+                {
+                    connected = connected,
+                    firmware = firmware,
+                    frame = frame,
+                    link = link,
+                    port = port,
+                    sysid = sysid
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error getting system status: ", ex);
+                return "{}";
+            }
+        }
+
+        public bool WriteParameter(string name, double value)
+        {
+            try
+            {
+                if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+                {
+                    return false;
+                }
+                MainV2.comPort.setParam(name, value);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error writing parameter " + name + ": ", ex);
+                return false;
+            }
+        }
+
+        public string WriteParameters(string jsonChanges)
+        {
+            try
+            {
+                if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+                {
+                    return "Not connected";
+                }
+
+                var changes = JsonConvert.DeserializeObject<List<ParamChange>>(jsonChanges);
+                int successCount = 0;
+                int failCount = 0;
+                bool rebootRequired = false;
+
+                foreach (var change in changes)
+                {
+                    try
+                    {
+                        MainV2.comPort.setParam(change.name, change.value);
+                        successCount++;
+
+                        if (ParameterMetaDataRepository.GetParameterRebootRequired(change.name, MainV2.comPort.MAV.cs.firmware.ToString()))
+                        {
+                            rebootRequired = true;
+                        }
+                    }
+                    catch
+                    {
+                        failCount++;
+                    }
+                }
+
+                string msg = $"{successCount} parameters saved successfully.";
+                if (failCount > 0)
+                {
+                    msg += $" {failCount} parameters failed to save.";
+                }
+                if (rebootRequired)
+                {
+                    msg += " Reboot is required for some parameters to take effect.";
+                }
+                return msg;
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error writing multiple parameters: ", ex);
+                return "Error: " + ex.Message;
+            }
+        }
+
+        public class ParamChange
+        {
+            public string name { get; set; }
+            public double value { get; set; }
+        }
+
+        public void RerequestParams()
+        {
+            if (!MainV2.comPort.BaseStream.IsOpen) return;
+            try
+            {
+                MainV2.comPort.getParamList();
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error refreshing parameters: ", ex);
+            }
+        }
+
+        public string LoadParamsFromFile()
+        {
+            try
+            {
+                using (var ofd = new OpenFileDialog
+                {
+                    AddExtension = true,
+                    DefaultExt = ".param",
+                    RestoreDirectory = true,
+                    Filter = ParamFile.FileMask
+                })
+                {
+                    if (ofd.ShowDialog() == DialogResult.OK)
+                    {
+                        var param2 = ParamFile.loadParamFile(ofd.FileName);
+                        var dict = new Dictionary<string, double>();
+                        foreach (string name in param2.Keys)
+                        {
+                            dict[name] = double.Parse(param2[name].ToString());
+                        }
+                        return JsonConvert.SerializeObject(dict);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error loading parameters file: ", ex);
+            }
+            return null;
+        }
+
+        public bool SaveParamsToFile(string jsonParams)
+        {
+            try
+            {
+                using (var sfd = new SaveFileDialog
+                {
+                    AddExtension = true,
+                    DefaultExt = ".param",
+                    RestoreDirectory = true,
+                    Filter = "Param List|*.param;*.parm"
+                })
+                {
+                    if (sfd.ShowDialog() == DialogResult.OK)
+                    {
+                        var dict = JsonConvert.DeserializeObject<Dictionary<string, double>>(jsonParams);
+                        var data = new Hashtable();
+                        foreach (var kv in dict)
+                        {
+                            data[kv.Key] = kv.Value;
+                        }
+                        ParamFile.SaveParamFile(sfd.FileName, data);
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error exporting parameters: ", ex);
+            }
+            return false;
+        }
+
+        public void Activate()
+        {
+            InitializeBrowser();
+            TriggerReload();
         }
 
         public void Deactivate()
         {
-            foreach (DataGridViewColumn col in Params.Columns)
-            {
-                // Don't need to save the width of a fill column
-                if (col.AutoSizeMode == DataGridViewAutoSizeColumnMode.Fill) continue;
-
-                // Don't need to save the width of a column that can't be resized
-                if (col.Resizable == DataGridViewTriState.False) continue;
-
-                Settings.Instance["rawparam_" + col.Name + "_width"] = col.Width.ToString("0", CultureInfo.InvariantCulture);
-            }
-
-            Settings.Instance["rawparam_splitterdistance"] = splitContainer1.SplitterDistance.ToString();
-            Settings.Instance["rawparam_panel1collapsed"] = splitContainer1.Panel1Collapsed.ToString();
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

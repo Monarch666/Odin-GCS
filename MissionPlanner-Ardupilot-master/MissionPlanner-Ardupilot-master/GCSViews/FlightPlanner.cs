@@ -54,9 +54,11 @@ using MissionPlanner.ArduPilot.Mavlink;
 using System.Drawing.Imaging;
 using SharpKml.Engine;
 using MissionPlanner.Controls.Waypoints;
+using System.Runtime.InteropServices;
 
 namespace MissionPlanner.GCSViews
 {
+    [ComVisible(true)]
     public partial class FlightPlanner : MyUserControl, IDeactivate, IActivate
     {
         public FlightPlanner()
@@ -64,6 +66,8 @@ namespace MissionPlanner.GCSViews
             InitializeComponent();
             Init();
         }
+
+        private WebBrowser webBrowser;
 
 
         private void but_mincommands_Click(object sender, System.EventArgs e)
@@ -298,49 +302,84 @@ namespace MissionPlanner.GCSViews
         public void Activate()
         {
             timer1.Start();
+            
+            SetBrowserFeatureControl();
 
-            // hide altmode if old copter version
-            if (MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen && MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2 &&
-                MainV2.comPort.MAV.cs.version < new Version(3, 3))
+            if (webBrowser == null)
             {
-                CMB_altmode.Visible = false;
+                if (this.panelBASE != null)
+                {
+                    this.panelBASE.Visible = false;
+                }
+                webBrowser = new WebBrowser();
+                webBrowser.Dock = DockStyle.Fill;
+                webBrowser.ScriptErrorsSuppressed = true;
+                webBrowser.ObjectForScripting = this;
+                webBrowser.DocumentCompleted += WebBrowser_DocumentCompleted;
+                this.Controls.Add(webBrowser);
+
+                string htmlPath = Path.Combine(Settings.GetRunningDirectory(), "flight_planner.html");
+                if (!File.Exists(htmlPath))
+                {
+                    string sourcePath = Path.Combine(Application.StartupPath, "..", "..", "flight_planner.html");
+                    if (File.Exists(sourcePath))
+                    {
+                        try
+                        {
+                            File.Copy(sourcePath, htmlPath, true);
+                        }
+                        catch (Exception ex)
+                        {
+                            log.Error("Failed to copy flight_planner.html to running directory", ex);
+                        }
+                    }
+                }
+
+                webBrowser.Navigate(htmlPath);
             }
             else
             {
-                CMB_altmode.Visible = true;
+                TriggerReload();
             }
-
-            // hide spline wp options if not arducopter
-            if (MainV2.comPort.MAV.cs.firmware == Firmwares.ArduCopter2)
-                CHK_splinedefault.Visible = true;
-            else
-                CHK_splinedefault.Visible = false;
-
-            chk_usemavftp.Checked = Settings.Instance.GetBoolean("UseMissionMAVFTP", false);
-
-            updateHome();
-
-            setWPParams();
-
-            updateCMDParams();
-
-            updateDisplayView();
-
+            
+            // Standard state setup in background
             try
             {
-                int.Parse(TXT_DefaultAlt.Text);
+                chk_usemavftp.Checked = Settings.Instance.GetBoolean("UseMissionMAVFTP", false);
+                updateHome();
+                setWPParams();
+                updateCMDParams();
+                updateDisplayView();
             }
-            catch
+            catch (Exception ex)
             {
-                CustomMessageBox.Show("Please fix your default alt value");
-                TXT_DefaultAlt.Text = (50 * CurrentState.multiplieralt).ToString("0");
+                log.Error(ex);
             }
         }
 
         public void Deactivate()
         {
-            config(true);
+            try
+            {
+                config(true);
+            }
+            catch {}
             timer1.Stop();
+        }
+
+        private void WebBrowser_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+            TriggerReload();
+        }
+
+        private void TriggerReload()
+        {
+            if (webBrowser != null && webBrowser.ReadyState == WebBrowserReadyState.Complete)
+            {
+                webBrowser.Document.InvokeScript("onMissionLoaded", new object[] { GetMissionItemsJson() });
+                webBrowser.Document.InvokeScript("onHomeLoaded", new object[] { GetHomeLocationJson() });
+                webBrowser.Document.InvokeScript("onStatusLoaded", new object[] { GetSystemStatus() });
+            }
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
@@ -5675,6 +5714,8 @@ namespace MissionPlanner.GCSViews
             writeKML();
 
             MainMap_OnMapZoomChanged();
+
+            TriggerReload();
         }
 
         private void readCMDXML()
@@ -8571,6 +8612,276 @@ Column 1: Field type (RALLY is the only one at the moment -- may have RALLY_LAND
             }
 
             return true;
+        }
+
+        // --- WEB WORKSPACE SCRIPT BRIDGE METHODS ---
+
+        public string GetMissionItemsJson()
+        {
+            try
+            {
+                var list = new List<object>();
+                var commandlist = GetCommandList();
+                for (int idx = 0; idx < commandlist.Count; idx++)
+                {
+                    var item = commandlist[idx];
+                    list.Add(new
+                    {
+                        seq = idx + 1,
+                        command = ((MAVLink.MAV_CMD)item.id).ToString(),
+                        p1 = item.p1,
+                        p2 = item.p2,
+                        p3 = item.p3,
+                        p4 = item.p4,
+                        lat = item.lat,
+                        lng = item.lng,
+                        alt = item.alt * CurrentState.multiplieralt,
+                        frame = (int)item.frame
+                    });
+                }
+                return JsonConvert.SerializeObject(list);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+                return "[]";
+            }
+        }
+
+        public void UploadMissionItems(string jsonStr)
+        {
+            try
+            {
+                this.Invoke((Action)delegate
+                {
+                    quickadd = true;
+                    Commands.Rows.Clear();
+                    var list = JsonConvert.DeserializeObject<List<dynamic>>(jsonStr);
+                    if (list == null) return;
+
+                    foreach (var item in list)
+                    {
+                        int rowIndex = Commands.Rows.Add();
+                        var row = Commands.Rows[rowIndex];
+
+                        string cmdStr = (string)item.command;
+                        try
+                        {
+                            MAVLink.MAV_CMD cmd = (MAVLink.MAV_CMD)Enum.Parse(typeof(MAVLink.MAV_CMD), cmdStr);
+                            row.Cells[Command.Index].Value = cmd.ToString();
+                        }
+                        catch
+                        {
+                            row.Cells[Command.Index].Value = cmdStr;
+                        }
+
+                        double[] multipliers = cmdParamMultipliers.ContainsKey(cmdStr) 
+                            ? cmdParamMultipliers[cmdStr] 
+                            : new double[] { 1, 1, 1, 1, 1, 1, 1 };
+
+                        row.Cells[Param1.Index].Value = ((double)item.p1) * multipliers[0];
+                        row.Cells[Param2.Index].Value = ((double)item.p2) * multipliers[1];
+                        row.Cells[Param3.Index].Value = ((double)item.p3) * multipliers[2];
+                        row.Cells[Param4.Index].Value = ((double)item.p4) * multipliers[3];
+                        
+                        row.Cells[Lat.Index].Value = ((double)item.lat) * multipliers[4];
+                        row.Cells[Lon.Index].Value = ((double)item.lng) * multipliers[5];
+                        row.Cells[Alt.Index].Value = (double)item.alt;
+                        
+                        row.Cells[Frame.Index].Value = (int)item.frame;
+                    }
+                    quickadd = false;
+
+                    BUT_write_Click(null, null);
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+                CustomMessageBox.Show("Failed to upload mission: " + ex.Message, "Error");
+            }
+        }
+
+        public void DownloadMission()
+        {
+            try
+            {
+                this.Invoke((Action)delegate
+                {
+                    BUT_read_Click(null, null);
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
+        public string GetHomeLocationJson()
+        {
+            try
+            {
+                double lat = 0;
+                double lng = 0;
+                double alt = 0;
+                
+                this.Invoke((Action)delegate
+                {
+                    double.TryParse(TXT_homelat.Text, out lat);
+                    double.TryParse(TXT_homelng.Text, out lng);
+                    double.TryParse(TXT_homealt.Text, out alt);
+                });
+
+                var homeObj = new { lat = lat, lng = lng, alt = alt };
+                return JsonConvert.SerializeObject(homeObj);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+                return "{\"lat\":0,\"lng\":0,\"alt\":0}";
+            }
+        }
+
+        public void SetHomeLocation(double lat, double lng, double alt)
+        {
+            try
+            {
+                this.Invoke((Action)delegate
+                {
+                    TXT_homelat.Text = lat.ToString("0.00000000");
+                    TXT_homelng.Text = lng.ToString("0.00000000");
+                    TXT_homealt.Text = alt.ToString("0.00");
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
+        public string GetSystemStatus()
+        {
+            try
+            {
+                bool connected = MainV2.comPort.BaseStream != null && MainV2.comPort.BaseStream.IsOpen;
+                string firmware = connected ? MainV2.comPort.MAV.cs.firmware.ToString() : "OFFLINE";
+                string frame = connected ? MainV2.comPort.MAV.aptype.ToString() : "";
+                string link = connected ? MainV2.comPort.MAV.cs.linkqualitygcs.ToString() + "%" : "0%";
+                string port = connected ? MainV2.comPort.BaseStream.PortName : "";
+                string sysid = connected ? MainV2.comPort.MAV.sysid.ToString() : "0";
+
+                var status = new
+                {
+                    connected = connected,
+                    firmware = firmware,
+                    frame = frame,
+                    link = link,
+                    port = port,
+                    sysid = sysid
+                };
+                return JsonConvert.SerializeObject(status);
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+                return "{\"connected\":false,\"firmware\":\"OFFLINE\",\"frame\":\"\",\"link\":\"0%\",\"port\":\"\",\"sysid\":\"0\"}";
+            }
+        }
+
+        public void LoadMissionFromFile()
+        {
+            try
+            {
+                this.Invoke((Action)delegate
+                {
+                    BUT_loadwpfile_Click(null, null);
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
+        public void SaveMissionToFile(string jsonStr)
+        {
+            try
+            {
+                this.Invoke((Action)delegate
+                {
+                    quickadd = true;
+                    Commands.Rows.Clear();
+                    var list = JsonConvert.DeserializeObject<List<dynamic>>(jsonStr);
+                    if (list != null)
+                    {
+                        foreach (var item in list)
+                        {
+                            int rowIndex = Commands.Rows.Add();
+                            var row = Commands.Rows[rowIndex];
+
+                            string cmdStr = (string)item.command;
+                            row.Cells[Command.Index].Value = cmdStr;
+
+                            double[] multipliers = cmdParamMultipliers.ContainsKey(cmdStr) 
+                                ? cmdParamMultipliers[cmdStr] 
+                                : new double[] { 1, 1, 1, 1, 1, 1, 1 };
+
+                            row.Cells[Param1.Index].Value = ((double)item.p1) * multipliers[0];
+                            row.Cells[Param2.Index].Value = ((double)item.p2) * multipliers[1];
+                            row.Cells[Param3.Index].Value = ((double)item.p3) * multipliers[2];
+                            row.Cells[Param4.Index].Value = ((double)item.p4) * multipliers[3];
+                            
+                            row.Cells[Lat.Index].Value = ((double)item.lat) * multipliers[4];
+                            row.Cells[Lon.Index].Value = ((double)item.lng) * multipliers[5];
+                            row.Cells[Alt.Index].Value = (double)item.alt;
+                            
+                            row.Cells[Frame.Index].Value = (int)item.frame;
+                        }
+                    }
+                    quickadd = false;
+
+                    BUT_saveWPFile_Click(null, null);
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
+        public void RerequestParams()
+        {
+            try
+            {
+                this.Invoke((Action)delegate
+                {
+                    // Refresh system parameters
+                    TriggerReload();
+                });
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
+        private void SetBrowserFeatureControl()
+        {
+            try
+            {
+                string fileName = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
+                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_BROWSER_EMULATION"))
+                {
+                    if (key != null)
+                    {
+                        key.SetValue(fileName, 11001, Microsoft.Win32.RegistryValueKind.DWord);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error("Failed to set FEATURE_BROWSER_EMULATION in registry", ex);
+            }
         }
     }
 }

@@ -3336,7 +3336,65 @@ namespace MissionPlanner.GCSViews
         private System.Windows.Forms.Label lblPitch;
         private System.Windows.Forms.Label lblTime;
         private System.Windows.Forms.PictureBox hud;
+        private System.Windows.Forms.PictureBox hudHorizon;
+        private System.Windows.Forms.PictureBox hudCompass;
         private System.Windows.Forms.Timer odinUpdateTimer;
+
+        // Custom ODIN dashboard panels
+        private Panel odinMainDashboardPanel;
+        private Panel pnlContent;
+        private Panel pnlTelemStrip;
+        private Panel pnlFlightPage;
+        private Panel pnlAnalyticsPage;
+        private Panel pnlWeatherPage;
+        private Panel pnlRadarPage;
+        private Panel pnlEtaPlannerPage;
+        private Panel pnlSettingsPage;
+        private Panel pnlMapToolbar;
+        private Panel pnlBotOverlay;
+
+        // Top Telemetry Strip Labels
+        private System.Windows.Forms.Label lblTopAlt;
+        private System.Windows.Forms.Label lblTopGS;
+        private System.Windows.Forms.Label lblTopDist;
+        private System.Windows.Forms.Label lblTopHeading;
+        private System.Windows.Forms.Label lblTopBattery;
+        private System.Windows.Forms.Label lblTopSats;
+        private System.Windows.Forms.Label lblTopFlightTime;
+        private System.Windows.Forms.Label lblTopEtaHome;
+        private System.Windows.Forms.Label lblTopWind;
+        private System.Windows.Forms.Label lblTopTemp;
+
+        // Bottom Telemetry Labels
+        private System.Windows.Forms.Label lblBotAlt;
+        private System.Windows.Forms.Label lblBotClimb;
+        private System.Windows.Forms.Label lblBotGS;
+        private System.Windows.Forms.Label lblBotDist;
+        private System.Windows.Forms.Label lblBotHeading;
+        private System.Windows.Forms.Label lblBotRoll;
+        private System.Windows.Forms.Label lblBotPitch;
+        private System.Windows.Forms.Label lblBotYaw;
+        private System.Windows.Forms.Label lblBotFlightTime;
+        private System.Windows.Forms.Label lblBotRcSignal;
+
+        // Simulation parameters
+        private double simLat = -35.363261;
+        private double simLng = 149.165230;
+        private double simAlt = 120.5;
+        private double simSpeed = 18.6;
+        private double simHeading = 87.0;
+        private double simBattery = 92.0;
+        private double simFlightTimeSecs = 1122.0;
+        private double simWpDist = 1250.0;
+        private double simWindSpeed = 3.33;
+        private double simWindDir = 45.0;
+        private double simTemp = 28.0;
+        private double simClimb = 2.1;
+        private double simSats = 18.0;
+        private double simRcSignal = 98.0;
+        private double simRoll = 0.0;
+        private double simPitch = -1.2;
+        private double radarSweepAngle = 0.0;
 
         private void ManageLeftPanelVisibility()
         {
@@ -6721,202 +6779,812 @@ namespace MissionPlanner.GCSViews
         }
         private void SetupOdinLayout()
         {
-            // 1. Set the flag FIRST so ManageLeftPanelVisibility keeps Panel1 collapsed
             _odinLayoutActive = true;
+            MainH.Panel1Collapsed = true;
 
-            // 2. Remove hud1 from its current parent
             if (hud1.Parent != null)
                 hud1.Parent.Controls.Remove(hud1);
 
-            // 3. Clear all controls from left panel containers
-            SubMainLeft.Panel1.Controls.Clear();
-            tabControlactions.TabPages.Clear();
-            panel_persistent.Controls.Clear();
-
-            // 4. Collapse the left panel
-            MainH.Panel1Collapsed = true;
-
-            // 5. Create the bottom overlay panel (dark background like Odin)
-            Panel odinPanel = new Panel();
-            odinPanel.Name = "odinPanel";
-            odinPanel.BackColor = Color.FromArgb(20, 20, 20);
-            odinPanel.Height = 250;
-            odinPanel.Width = 750;
-            odinPanel.Dock = DockStyle.None;
-
-            // 6. Create custom GDI+ PictureBox for circular compass/attitude indicator
-            hud = new PictureBox();
-            hud.Name = "customCircularHud";
-            hud.Width = 250;
-            hud.Height = 250;
-            hud.Location = new Point(500, 0);
-            hud.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Right;
-            hud.BackColor = Color.Transparent;
-            hud.Paint += Hud_Paint;
-
-            // 7. Create the telemetry strip (left side, matching Odin layout)
-            TableLayoutPanel telemetryStrip = new TableLayoutPanel();
-            telemetryStrip.Name = "telemetryStrip";
-            telemetryStrip.BackColor = Color.FromArgb(30, 30, 30);
-            telemetryStrip.Dock = DockStyle.None;
-            telemetryStrip.Location = new Point(10, 35);
-            telemetryStrip.Width = 480;
-            telemetryStrip.Height = 180;
-            telemetryStrip.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Bottom | AnchorStyles.Right;
-            telemetryStrip.ColumnCount = 5;
-            telemetryStrip.RowCount = 2;
-            telemetryStrip.AutoSize = false;
-
-            // Column styles (equal width)
-            for (int i = 0; i < 5; i++)
-                telemetryStrip.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
-            // Row styles (equal height)
-            telemetryStrip.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            telemetryStrip.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-
-            lblAlt = CreateTelemetry("Altitude", "0.0 m");
-            lblClimb = CreateTelemetry("Climb", "0.0 m/s");
-            lblDist = CreateTelemetry("Distance WP", "0.0 m");
-            lblGS = CreateTelemetry("Ground Speed", "0.0 m/s");
-            lblHeading = CreateTelemetry("Heading", "0\u00B0");
-
-            lblRoll = CreateTelemetry("Roll", "0\u00B0");
-            lblPitch = CreateTelemetry("Pitch", "0\u00B0");
-            lblTime = CreateTelemetry("Flight Time", "00:00:00");
-
-            telemetryStrip.Controls.Add(lblAlt, 0, 0);
-            telemetryStrip.Controls.Add(lblClimb, 1, 0);
-            telemetryStrip.Controls.Add(lblDist, 2, 0);
-            telemetryStrip.Controls.Add(lblGS, 3, 0);
-            telemetryStrip.Controls.Add(lblHeading, 4, 0);
-
-            telemetryStrip.Controls.Add(lblRoll, 0, 1);
-            telemetryStrip.Controls.Add(lblPitch, 1, 1);
-            telemetryStrip.Controls.Add(lblTime, 2, 1);
-
-            // 8. Assemble the overlay panel
-            odinPanel.Controls.Add(hud);
-            odinPanel.Controls.Add(telemetryStrip);
-
-            // 9. Add the overlay to the map's parent container (bottom-right)
             Control mapParent = gMapControl1.Parent;
             if (mapParent != null)
             {
-                mapParent.Controls.Add(odinPanel);
-                odinPanel.BringToFront();
-                odinPanel.Location = new Point(mapParent.Width - odinPanel.Width, mapParent.Height - odinPanel.Height);
-
-                mapParent.Resize += (s, ev) =>
-                {
-                    odinPanel.Location = new Point(mapParent.Width - odinPanel.Width, mapParent.Height - odinPanel.Height);
-                };
-
-                // Hide all map overlay controls except gMapControl1 and the new odinPanel
                 foreach (Control ctl in mapParent.Controls)
                 {
-                    if (ctl != gMapControl1 && ctl != odinPanel)
-                    {
+                    if (ctl != gMapControl1)
                         ctl.Visible = false;
-                    }
                 }
             }
 
-            // 10. Set up a timer to update telemetry values and invalidate the HUD
+            odinMainDashboardPanel = new Panel();
+            odinMainDashboardPanel.Name = "odinMainDashboardPanel";
+            odinMainDashboardPanel.Dock = DockStyle.Fill;
+            odinMainDashboardPanel.BackColor = Color.FromArgb(16, 20, 24);
+
+            // Hide the native white/beige top panel and MenuStrip
+            if (MainV2.instance != null)
+            {
+                if (MainV2.instance.panel1 != null)
+                    MainV2.instance.panel1.Visible = false;
+                if (MainV2.instance.MainMenu != null)
+                    MainV2.instance.MainMenu.Visible = false;
+                MainV2.instance.MainMenuStrip = null;
+                if (MainV2.instance.MyView != null)
+                    MainV2.instance.MyView.Padding = new Padding(0, 0, 0, 0);
+            }
+
+            // 1. Top Navigation Bar
+            Panel pnlTopNavbar = new Panel();
+            pnlTopNavbar.Height = 50;
+            pnlTopNavbar.Dock = DockStyle.Top;
+            pnlTopNavbar.BackColor = Color.FromArgb(16, 20, 24);
+            pnlTopNavbar.Paint += (s, e) => {
+                using (Pen pen = new Pen(Color.FromArgb(32, 38, 46), 1))
+                    e.Graphics.DrawLine(pen, 0, pnlTopNavbar.Height - 1, pnlTopNavbar.Width, pnlTopNavbar.Height - 1);
+            };
+
+            System.Windows.Forms.Label lblLogo = new System.Windows.Forms.Label();
+            lblLogo.Text = "ODIN GCS";
+            lblLogo.Font = new Font("Segoe UI", 12.5F, FontStyle.Bold);
+            lblLogo.ForeColor = Color.FromArgb(255, 90, 31);
+            lblLogo.Location = new Point(15, 12);
+            lblLogo.AutoSize = true;
+            pnlTopNavbar.Controls.Add(lblLogo);
+
+            FlowLayoutPanel pnlTabs = new FlowLayoutPanel();
+            pnlTabs.FlowDirection = FlowDirection.LeftToRight;
+            pnlTabs.Location = new Point(120, 0);
+            pnlTabs.Width = 600;
+            pnlTabs.Height = 50;
+            pnlTabs.BackColor = Color.Transparent;
+
+            string[] tabNames = { "FLIGHT", "ANALYTICS", "WEATHER", "FLIGHT RADAR", "ETA PLANNER", "SETTINGS" };
+            System.Windows.Forms.Label[] tabLabels = new System.Windows.Forms.Label[tabNames.Length];
+            for (int i = 0; i < tabNames.Length; i++)
+            {
+                int index = i;
+                System.Windows.Forms.Label lblTab = new System.Windows.Forms.Label();
+                lblTab.Text = tabNames[i];
+                lblTab.ForeColor = i == 0 ? Color.FromArgb(255, 90, 31) : Color.FromArgb(124, 135, 150);
+                lblTab.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+                lblTab.TextAlign = ContentAlignment.MiddleCenter;
+                lblTab.Height = 50;
+                lblTab.Width = 90;
+                lblTab.Cursor = Cursors.Hand;
+                lblTab.Click += (s, e) => {
+                    for (int j = 0; j < tabLabels.Length; j++)
+                    {
+                        tabLabels[j].ForeColor = j == index ? Color.FromArgb(255, 90, 31) : Color.FromArgb(124, 135, 150);
+                    }
+                    SwitchPage(index);
+                };
+                tabLabels[i] = lblTab;
+                pnlTabs.Controls.Add(lblTab);
+            }
+            pnlTopNavbar.Controls.Add(pnlTabs);
+
+            System.Windows.Forms.Label lblHealth = new System.Windows.Forms.Label();
+            lblHealth.Text = "SYSTEM ONLINE";
+            lblHealth.Font = new Font("Segoe UI", 8F, FontStyle.Bold);
+            lblHealth.ForeColor = Color.FromArgb(16, 185, 129);
+            lblHealth.BackColor = Color.FromArgb(20, 16, 185, 129);
+            lblHealth.TextAlign = ContentAlignment.MiddleCenter;
+            lblHealth.Size = new Size(110, 26);
+            lblHealth.Location = new Point(pnlTopNavbar.Width - 130, 12);
+            lblHealth.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblHealth.Paint += (s, e) => {
+                e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                using (Pen pen = new Pen(Color.FromArgb(16, 185, 129), 1))
+                {
+                    e.Graphics.DrawRectangle(pen, 0, 0, lblHealth.Width - 1, lblHealth.Height - 1);
+                }
+            };
+            pnlTopNavbar.Controls.Add(lblHealth);
+
+            // 2. Top Telemetry Strip
+            pnlTelemStrip = new Panel();
+            pnlTelemStrip.Height = 45;
+            pnlTelemStrip.Dock = DockStyle.Top;
+            pnlTelemStrip.BackColor = Color.FromArgb(20, 25, 31);
+            pnlTelemStrip.Paint += (s, e) => {
+                using (Pen pen = new Pen(Color.FromArgb(32, 38, 46), 1))
+                    e.Graphics.DrawLine(pen, 0, pnlTelemStrip.Height - 1, pnlTelemStrip.Width, pnlTelemStrip.Height - 1);
+            };
+
+            TableLayoutPanel tblTopTelem = new TableLayoutPanel();
+            tblTopTelem.Dock = DockStyle.Fill;
+            tblTopTelem.ColumnCount = 10;
+            tblTopTelem.RowCount = 1;
+            for (int i = 0; i < 10; i++)
+                tblTopTelem.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10F));
+
+            lblTopAlt = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopGS = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopDist = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopHeading = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopBattery = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopSats = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopFlightTime = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopEtaHome = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopWind = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+            lblTopTemp = new System.Windows.Forms.Label { Dock = DockStyle.Fill };
+
+            var cs = MainV2.comPort.MAV.cs;
+
+            tblTopTelem.Controls.Add(CreateTopTelemCard("ALTITUDE", () => $"{cs.alt:F1} m", () => "AMSL", "\u25B2"), 0, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("GROUND SPEED", () => $"{cs.groundspeed:F1} m/s", () => "", "\u23F0"), 1, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("DIST TO WP", () => $"{cs.wp_dist / 1000.0:F2} km", () => "", "\u2690"), 2, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("HEADING", () => $"{(int)cs.yaw}\u00B0", () => "", "\u25CE"), 3, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("BATTERY", () => $"{cs.battery_remaining}%", () => $"{cs.battery_voltage:F1} V", "\u25AE"), 4, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("SATELLITES", () => $"{cs.satcount}", () => cs.gpsstatus == 4 ? "RTK FIX" : "3D FIX", "\u2605"), 5, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("FLIGHT TIME", () => TimeSpan.FromSeconds(cs.timeSinceArmInAir).ToString(@"hh\:mm\:ss"), () => "", "\u23F1"), 6, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("ETA TO HOME", () => "00:00", () => "", "\u2302"), 7, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("WIND", () => $"{cs.wind_vel * 3.6:F0} km/h", () => $"{GetWindDirectionStr(cs.wind_dir)} ({cs.wind_dir:F0}\u00B0)", "\u2248"), 8, 0);
+            tblTopTelem.Controls.Add(CreateTopTelemCard("TEMPERATURE", () => "28 \u00B0C", () => "Few Clouds", "\u2609"), 9, 0);
+
+            pnlTelemStrip.Controls.Add(tblTopTelem);
+
+            odinMainDashboardPanel.Controls.Add(pnlTelemStrip);
+            odinMainDashboardPanel.Controls.Add(pnlTopNavbar);
+            pnlTopNavbar.BringToFront();
+
+            // 3. Main Content Panel
+            pnlContent = new Panel();
+            pnlContent.Dock = DockStyle.Fill;
+            pnlContent.BackColor = Color.FromArgb(16, 20, 24);
+            odinMainDashboardPanel.Controls.Add(pnlContent);
+
+            SetupPages();
+
+            this.Controls.Add(odinMainDashboardPanel);
+            odinMainDashboardPanel.BringToFront();
+
             odinUpdateTimer = new System.Windows.Forms.Timer();
             odinUpdateTimer.Interval = 200;
-            odinUpdateTimer.Tick += (s, ev) =>
-            {
-                try
+            odinUpdateTimer.Tick += (s, ev) => {
+                UpdateTelemetry();
+                if (MainV2.instance != null)
                 {
-                    // Ensure overlay controls stay hidden
-                    if (mapParent != null)
-                    {
-                        foreach (Control ctl in mapParent.Controls)
-                        {
-                            if (ctl != gMapControl1 && ctl != odinPanel && ctl.Visible)
-                            {
-                                ctl.Visible = false;
-                            }
-                        }
-                    }
-
-                    var cs = MainV2.comPort.MAV.cs;
-                    if (cs == null) return;
-
-                    roll = cs.roll;
-                    pitch = cs.pitch;
-                    heading = cs.yaw;
-
-                    lblAlt.Text = $"{cs.alt:F1} m\nAltitude";
-                    lblClimb.Text = $"{cs.verticalspeed:F1} m/s\nClimb";
-                    lblDist.Text = $"{cs.wp_dist:F1} m\nDistance WP";
-                    lblGS.Text = $"{cs.groundspeed:F1} m/s\nGround Speed";
-                    lblHeading.Text = $"{heading:F0}\u00B0\nHeading";
-                    lblRoll.Text = $"{roll:F0}\u00B0\nRoll";
-                    lblPitch.Text = $"{pitch:F0}\u00B0\nPitch";
-
-                    double secs = cs.timeSinceArmInAir;
-                    TimeSpan ts = TimeSpan.FromSeconds(secs);
-                    lblTime.Text = ts.ToString(@"hh\:mm\:ss") + "\nFlight Time";
-
-                    hud.Invalidate();
+                    if (MainV2.instance.panel1 != null && MainV2.instance.panel1.Visible)
+                        MainV2.instance.panel1.Visible = false;
+                    if (MainV2.instance.MainMenu != null && MainV2.instance.MainMenu.Visible)
+                        MainV2.instance.MainMenu.Visible = false;
+                    if (MainV2.instance.MyView != null && MainV2.instance.MyView.Padding.Top != 0)
+                        MainV2.instance.MyView.Padding = new Padding(0, 0, 0, 0);
                 }
-                catch { }
             };
             odinUpdateTimer.Start();
         }
 
-        private System.Windows.Forms.Label CreateTelemetry(string title, string value)
+        private Panel CreateTopTelemCard(string title, Func<string> getValue, Func<string> getSub, string iconCode)
+        {
+            Panel card = new Panel { Dock = DockStyle.Fill, Height = 40 };
+            card.Paint += (s, e) => {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                using (Font iconFont = new Font("Segoe UI Symbol", 13F))
+                using (SolidBrush iconBrush = new SolidBrush(Color.FromArgb(124, 135, 150)))
+                {
+                    g.DrawString(iconCode, iconFont, iconBrush, 8, 12);
+                }
+
+                g.DrawString(title, new Font("Segoe UI", 6.5F, FontStyle.Bold), new SolidBrush(Color.FromArgb(124, 135, 150)), 32, 4);
+                g.DrawString(getValue(), new Font("Segoe UI", 10F, FontStyle.Bold), Brushes.White, 32, 14);
+                g.DrawString(getSub(), new Font("Segoe UI", 6.5F), new SolidBrush(Color.FromArgb(100, 110, 125)), 32, 30);
+            };
+            return card;
+        }
+
+        private string GetWindDirectionStr(float deg)
+        {
+            string[] sectors = { "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW" };
+            int index = (int)((deg + 11.25) / 22.5) % 16;
+            return sectors[index];
+        }
+
+        private Button CreateActionButton(string text, int x, Action onClick)
+        {
+            Button btn = new Button();
+            btn.Text = text;
+            btn.Size = new Size(80, 28);
+            btn.Location = new Point(x, 11);
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 1;
+            btn.FlatAppearance.BorderColor = Color.FromArgb(255, 90, 31);
+            btn.BackColor = Color.FromArgb(20, 16, 20, 24);
+            btn.ForeColor = Color.FromArgb(255, 90, 31);
+            btn.Font = new Font("Segoe UI", 7.5F, FontStyle.Bold);
+            btn.Cursor = Cursors.Hand;
+            btn.Click += (s, e) => onClick();
+            return btn;
+        }
+
+        private bool CheckConnection()
+        {
+            if (MainV2.comPort.BaseStream == null || !MainV2.comPort.BaseStream.IsOpen)
+            {
+                CustomMessageBox.Show("Connection Required to execute flight actions.", "Disconnected");
+                return false;
+            }
+            return true;
+        }
+
+        private void SetupPages()
+        {
+            pnlFlightPage = new Panel { Dock = DockStyle.Fill, Visible = true };
+            pnlContent.Controls.Add(pnlFlightPage);
+
+            Panel pnlMapContainer = new Panel { Dock = DockStyle.Fill };
+            pnlFlightPage.Controls.Add(pnlMapContainer);
+
+            if (gMapControl1 != null)
+            {
+                gMapControl1.Parent = pnlMapContainer;
+                gMapControl1.Dock = DockStyle.Fill;
+                gMapControl1.Visible = true;
+            }
+
+            pnlMapToolbar = new Panel { Width = 45, Height = 230, BackColor = Color.FromArgb(200, 20, 25, 31), Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            pnlMapToolbar.Paint += (s, e) => ApplyPanelPaint(pnlMapToolbar, e, Color.FromArgb(200, 20, 25, 31), Color.FromArgb(38, 45, 54), 10);
+            
+            Button btnRecenter = CreateToolbarButton("[ ]", 10, () => {
+                if (MainV2.comPort.MAV.cs.lat != 0)
+                    gMapControl1.Position = new PointLatLng(MainV2.comPort.MAV.cs.lat, MainV2.comPort.MAV.cs.lng);
+            });
+            Button btnLayers = CreateToolbarButton("LAYERS", 45, () => {
+                gMapControl1.MapProvider = gMapControl1.MapProvider == GMap.NET.MapProviders.BingSatelliteMapProvider.Instance 
+                    ? (GMap.NET.MapProviders.GMapProvider)GMap.NET.MapProviders.GoogleMapProvider.Instance 
+                    : GMap.NET.MapProviders.BingSatelliteMapProvider.Instance;
+            });
+            Button btnMarker = CreateToolbarButton("MARK", 80, () => { });
+            Button btnMeasure = CreateToolbarButton("MEAS", 115, () => { });
+            Button btnZoomIn = CreateToolbarButton("+", 150, () => { gMapControl1.Zoom = Math.Min(gMapControl1.MaxZoom, gMapControl1.Zoom + 1); });
+            Button btnZoomOut = CreateToolbarButton("-", 185, () => { gMapControl1.Zoom = Math.Max(gMapControl1.MinZoom, gMapControl1.Zoom - 1); });
+
+            pnlMapToolbar.Controls.Add(btnRecenter);
+            pnlMapToolbar.Controls.Add(btnLayers);
+            pnlMapToolbar.Controls.Add(btnMarker);
+            pnlMapToolbar.Controls.Add(btnMeasure);
+            pnlMapToolbar.Controls.Add(btnZoomIn);
+            pnlMapToolbar.Controls.Add(btnZoomOut);
+
+            pnlMapContainer.Controls.Add(pnlMapToolbar);
+            pnlMapToolbar.BringToFront();
+            pnlMapToolbar.Location = new Point(pnlMapContainer.Width - 60, 20);
+            pnlMapContainer.Resize += (s, e) => {
+                pnlMapToolbar.Location = new Point(pnlMapContainer.Width - 60, 20);
+            };
+
+            // Bottom Telemetry Overlay (Max Right)
+            pnlBotOverlay = new Panel { Width = 840, Height = 150, BackColor = Color.FromArgb(210, 16, 20, 24), Anchor = AnchorStyles.Bottom | AnchorStyles.Right };
+            pnlBotOverlay.Paint += (s, e) => ApplyPanelPaint(pnlBotOverlay, e, Color.FromArgb(210, 16, 20, 24), Color.FromArgb(38, 45, 54), 12);
+
+            TableLayoutPanel tblBotTelem = new TableLayoutPanel { Dock = DockStyle.Left, Width = 460, Height = 140, ColumnCount = 5, RowCount = 2, Location = new Point(5, 5) };
+            for (int i = 0; i < 5; i++) tblBotTelem.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20F));
+            for (int i = 0; i < 2; i++) tblBotTelem.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+
+            lblBotAlt = CreateBotTelemLabel("Altitude", "0.0 m", "AMSL");
+            lblBotClimb = CreateBotTelemLabel("Climb Rate", "0.0 m/s", "");
+            lblBotGS = CreateBotTelemLabel("Ground Speed", "0.0 m/s", "");
+            lblBotDist = CreateBotTelemLabel("Distance WP", "0.0 m", "");
+            lblBotHeading = CreateBotTelemLabel("Heading", "0\u00B0", "");
+            lblBotRoll = CreateBotTelemLabel("Roll", "0.0\u00B0", "");
+            lblBotPitch = CreateBotTelemLabel("Pitch", "0.0\u00B0", "");
+            lblBotYaw = CreateBotTelemLabel("Yaw", "0.0\u00B0", "");
+            lblBotFlightTime = CreateBotTelemLabel("Flight Time", "00:00:00", "");
+            lblBotRcSignal = CreateBotTelemLabel("RC Signal", "100%", "");
+
+            tblBotTelem.Controls.Add(lblBotAlt, 0, 0);
+            tblBotTelem.Controls.Add(lblBotClimb, 1, 0);
+            tblBotTelem.Controls.Add(lblBotGS, 2, 0);
+            tblBotTelem.Controls.Add(lblBotDist, 3, 0);
+            tblBotTelem.Controls.Add(lblBotHeading, 4, 0);
+
+            tblBotTelem.Controls.Add(lblBotRoll, 0, 1);
+            tblBotTelem.Controls.Add(lblBotPitch, 1, 1);
+            tblBotTelem.Controls.Add(lblBotYaw, 2, 1);
+            tblBotTelem.Controls.Add(lblBotFlightTime, 3, 1);
+            tblBotTelem.Controls.Add(lblBotRcSignal, 4, 1);
+            pnlBotOverlay.Controls.Add(tblBotTelem);
+
+            hudHorizon = new PictureBox { Dock = DockStyle.Left, Width = 175, Height = 140, BackColor = Color.Transparent };
+            hudHorizon.Paint += Horizon_Paint;
+            pnlBotOverlay.Controls.Add(hudHorizon);
+
+            hudCompass = new PictureBox { Dock = DockStyle.Right, Width = 175, Height = 140, BackColor = Color.Transparent };
+            hudCompass.Paint += Compass_Paint;
+            pnlBotOverlay.Controls.Add(hudCompass);
+
+            hud = hudHorizon;
+
+            pnlMapContainer.Controls.Add(pnlBotOverlay);
+            pnlBotOverlay.BringToFront();
+            pnlBotOverlay.Location = new Point(pnlMapContainer.Width - pnlBotOverlay.Width - 20, pnlMapContainer.Height - pnlBotOverlay.Height - 20);
+            pnlMapContainer.Resize += (s, e) => {
+                pnlBotOverlay.Location = new Point(pnlMapContainer.Width - pnlBotOverlay.Width - 20, pnlMapContainer.Height - pnlBotOverlay.Height - 20);
+            };
+
+            // Setup other views
+            pnlWeatherPage = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = Color.FromArgb(16, 20, 24) };
+            pnlContent.Controls.Add(pnlWeatherPage);
+            SetupWeatherPage();
+
+            pnlRadarPage = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = Color.FromArgb(16, 20, 24) };
+            pnlContent.Controls.Add(pnlRadarPage);
+            SetupRadarPage();
+
+            pnlAnalyticsPage = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = Color.FromArgb(16, 20, 24) };
+            pnlContent.Controls.Add(pnlAnalyticsPage);
+            SetupAnalyticsPage();
+
+            pnlEtaPlannerPage = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = Color.FromArgb(16, 20, 24) };
+            pnlContent.Controls.Add(pnlEtaPlannerPage);
+            SetupEtaPlannerPage();
+
+            pnlSettingsPage = new Panel { Dock = DockStyle.Fill, Visible = false, BackColor = Color.FromArgb(16, 20, 24) };
+            pnlContent.Controls.Add(pnlSettingsPage);
+            SetupSettingsPage();
+        }
+
+        private Button CreateToolbarButton(string text, int y, Action onClick)
+        {
+            Button btn = new Button();
+            btn.Text = text;
+            btn.Size = new Size(35, 28);
+            btn.Location = new Point(5, y);
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderSize = 0;
+            btn.BackColor = Color.Transparent;
+            btn.ForeColor = Color.White;
+            btn.Font = new Font("Segoe UI", 7F, FontStyle.Bold);
+            btn.Cursor = Cursors.Hand;
+            btn.Click += (s, e) => onClick();
+            return btn;
+        }
+
+        private System.Windows.Forms.Label CreateBotTelemLabel(string title, string value, string sub)
         {
             var l = new System.Windows.Forms.Label();
-            l.Text = value + Environment.NewLine + title;
-            l.ForeColor = Color.White;
-            l.Font = new Font("Times New Roman", 10.5F, FontStyle.Regular);
-            l.TextAlign = ContentAlignment.MiddleCenter;
             l.Dock = DockStyle.Fill;
             l.BackColor = Color.Transparent;
+            l.Paint += (s, e) => {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                g.DrawString(title.ToUpper(), new Font("Segoe UI", 6.5F, FontStyle.Bold), new SolidBrush(Color.FromArgb(124, 135, 150)), 5, 8);
+                g.DrawString(l.Text, new Font("Segoe UI", 10.5F, FontStyle.Bold), Brushes.White, 5, 22);
+
+                if (!string.IsNullOrEmpty(sub))
+                {
+                    g.DrawString(sub, new Font("Segoe UI", 6F), new SolidBrush(Color.FromArgb(100, 110, 125)), 5, 40);
+                }
+            };
+            l.Text = value;
             return l;
         }
 
-        private void Hud_Paint(object sender, PaintEventArgs e)
+        private void SwitchPage(int index)
+        {
+            pnlFlightPage.Visible = index == 0;
+            pnlAnalyticsPage.Visible = index == 1;
+            pnlWeatherPage.Visible = index == 2;
+            pnlRadarPage.Visible = index == 3;
+            pnlEtaPlannerPage.Visible = index == 4;
+            pnlSettingsPage.Visible = index == 5;
+        }
+
+        private void ApplyPanelPaint(Panel p, PaintEventArgs e, Color bgColor, Color borderColor, int radius)
         {
             Graphics g = e.Graphics;
-            g.Clear(hud.Parent != null ? hud.Parent.BackColor : Color.FromArgb(20, 20, 20));
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddArc(0, 0, radius * 2, radius * 2, 180, 90);
+                path.AddArc(p.Width - radius * 2 - 1, 0, radius * 2, radius * 2, 270, 90);
+                path.AddArc(p.Width - radius * 2 - 1, p.Height - radius * 2 - 1, radius * 2, radius * 2, 0, 90);
+                path.AddArc(0, p.Height - radius * 2 - 1, radius * 2, radius * 2, 90, 90);
+                path.CloseAllFigures();
+                
+                using (SolidBrush brush = new SolidBrush(bgColor))
+                    g.FillPath(brush, path);
+                using (Pen pen = new Pen(borderColor, 1.2F))
+                    g.DrawPath(pen, path);
+            }
+        }
+
+        private void SetupWeatherPage()
+        {
+            Panel card = new Panel { Width = 300, Height = 360, Location = new Point(30, 30), BackColor = Color.FromArgb(20, 25, 31) };
+            card.Paint += (s, e) => ApplyPanelPaint(card, e, Color.FromArgb(20, 25, 31), Color.FromArgb(38, 45, 54), 12);
+
+            System.Windows.Forms.Label title = new System.Windows.Forms.Label {
+                Text = "WEATHER METRICS",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(255, 90, 31),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            card.Controls.Add(title);
+
+            string[,] fields = {
+                { "TEMPERATURE", "23.8 C" },
+                { "WIND SPEED", "4.2 m/s" },
+                { "WIND DIRECTION", "60 deg (ENE)" },
+                { "HUMIDITY", "62%" },
+                { "BARO PRESSURE", "1012 hPa" },
+                { "VISIBILITY", "10.0 km" },
+                { "FLIGHT RISK", "LOW RISK (GOOD)" }
+            };
+
+            for (int i = 0; i < 7; i++)
+            {
+                System.Windows.Forms.Label lblName = new System.Windows.Forms.Label {
+                    Text = fields[i, 0],
+                    Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(124, 135, 150),
+                    Location = new Point(20, 60 + i * 40),
+                    AutoSize = true
+                };
+                System.Windows.Forms.Label lblVal = new System.Windows.Forms.Label {
+                    Text = fields[i, 1],
+                    Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                    ForeColor = i == 6 ? Color.FromArgb(16, 185, 129) : Color.White,
+                    Location = new Point(20, 75 + i * 40),
+                    AutoSize = true
+                };
+                card.Controls.Add(lblName);
+                card.Controls.Add(lblVal);
+            }
+            pnlWeatherPage.Controls.Add(card);
+
+            PictureBox picSunPath = new PictureBox { Size = new Size(400, 360), Location = new Point(360, 30), BackColor = Color.Transparent };
+            picSunPath.Paint += (s, e) => {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                using (Pen pen = new Pen(Color.FromArgb(124, 135, 150), 2) { DashStyle = DashStyle.Dash })
+                {
+                    g.DrawArc(pen, 50, 80, 300, 200, 180, 180);
+                }
+
+                using (Pen linePen = new Pen(Color.FromArgb(32, 38, 46), 2))
+                {
+                    g.DrawLine(linePen, 20, 280, 380, 280);
+                }
+
+                g.DrawString("SUNRISE: 06:12", new Font("Segoe UI", 8F, FontStyle.Bold), Brushes.White, 30, 290);
+                g.DrawString("SUNSET: 18:45", new Font("Segoe UI", 8F, FontStyle.Bold), Brushes.White, 270, 290);
+
+                double angle = 45.0;
+                double rAngle = angle * Math.PI / 180.0;
+                int cx = 200;
+                int cy = 280;
+                int rx = 150;
+                int ry = 100;
+                int sx = cx - (int)(rx * Math.Cos(rAngle));
+                int sy = cy - (int)(ry * Math.Sin(rAngle));
+
+                using (SolidBrush sunBrush = new SolidBrush(Color.FromArgb(255, 90, 31)))
+                {
+                    g.FillEllipse(sunBrush, sx - 10, sy - 10, 20, 20);
+                }
+                g.DrawString("10:30 AM", new Font("Segoe UI", 8F, FontStyle.Bold), Brushes.OrangeRed, sx - 22, sy - 25);
+            };
+            pnlWeatherPage.Controls.Add(picSunPath);
+        }
+
+        private void SetupRadarPage()
+        {
+            PictureBox picRadar = new PictureBox { Size = new Size(360, 360), Location = new Point(30, 30), BackColor = Color.Transparent };
+            picRadar.Paint += (s, e) => {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                int cx = picRadar.Width / 2;
+                int cy = picRadar.Height / 2;
+                int radius = 160;
+
+                using (Pen pen = new Pen(Color.FromArgb(32, 38, 46), 1.5F))
+                {
+                    g.DrawEllipse(pen, cx - radius, cy - radius, radius * 2, radius * 2);
+                    g.DrawEllipse(pen, cx - radius * 2/3, cy - radius * 2/3, radius * 4/3, radius * 4/3);
+                    g.DrawEllipse(pen, cx - radius / 3, cy - radius / 3, radius * 2/3, radius * 2/3);
+                }
+
+                using (Pen pen = new Pen(Color.FromArgb(32, 38, 46), 1F))
+                {
+                    g.DrawLine(pen, cx - radius, cy, cx + radius, cy);
+                    g.DrawLine(pen, cx, cy - radius, cx, cy + radius);
+                }
+
+                double rad = radarSweepAngle * Math.PI / 180.0;
+                int sx = cx + (int)(radius * Math.Cos(rad));
+                int sy = cy + (int)(radius * Math.Sin(rad));
+                using (Pen sweepPen = new Pen(Color.FromArgb(120, 255, 90, 31), 2.5F))
+                {
+                    g.DrawLine(sweepPen, cx, cy, sx, sy);
+                }
+
+                DrawRadarTarget(g, cx - 60, cy - 80, "ADSB-102", "ALT: 2100m", Color.FromArgb(16, 185, 129));
+                DrawRadarTarget(g, cx + 90, cy + 40, "AIC-482", "ALT: 3400m", Color.FromArgb(245, 158, 11));
+                DrawRadarTarget(g, cx - 80, cy + 90, "EXP-98", "ALT: 1200m", Color.FromArgb(239, 68, 68));
+            };
+            pnlRadarPage.Controls.Add(picRadar);
+
+            Panel card = new Panel { Width = 300, Height = 360, Location = new Point(410, 30), BackColor = Color.FromArgb(20, 25, 31) };
+            card.Paint += (s, e) => ApplyPanelPaint(card, e, Color.FromArgb(20, 25, 31), Color.FromArgb(38, 45, 54), 12);
+
+            System.Windows.Forms.Label title = new System.Windows.Forms.Label {
+                Text = "TRAFFIC MONITOR (ADS-B)",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(255, 90, 31),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            card.Controls.Add(title);
+
+            string[] headers = { "CALLSIGN", "ALTITUDE", "THREAT" };
+            for (int i = 0; i < 3; i++)
+            {
+                System.Windows.Forms.Label lblHeader = new System.Windows.Forms.Label {
+                    Text = headers[i],
+                    Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(124, 135, 150),
+                    Location = new Point(20 + i * 90, 60),
+                    AutoSize = true
+                };
+                card.Controls.Add(lblHeader);
+            }
+
+            string[,] data = {
+                { "ADSB-102", "2100 m", "LOW" },
+                { "AIC-482", "3400 m", "MEDIUM" },
+                { "EXP-98", "1200 m", "HIGH" }
+            };
+            Color[] colors = { Color.FromArgb(16, 185, 129), Color.FromArgb(245, 158, 11), Color.FromArgb(239, 68, 68) };
+
+            for (int i = 0; i < 3; i++)
+            {
+                System.Windows.Forms.Label lblCall = new System.Windows.Forms.Label { Text = data[i, 0], Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), ForeColor = Color.White, Location = new Point(20, 95 + i * 40), AutoSize = true };
+                System.Windows.Forms.Label lblAltVal = new System.Windows.Forms.Label { Text = data[i, 1], Font = new Font("Segoe UI", 8.5F), ForeColor = Color.White, Location = new Point(110, 95 + i * 40), AutoSize = true };
+                System.Windows.Forms.Label lblThreat = new System.Windows.Forms.Label { Text = data[i, 2], Font = new Font("Segoe UI", 8.5F, FontStyle.Bold), ForeColor = colors[i], Location = new Point(200, 95 + i * 40), AutoSize = true };
+                card.Controls.Add(lblCall);
+                card.Controls.Add(lblAltVal);
+                card.Controls.Add(lblThreat);
+            }
+            pnlRadarPage.Controls.Add(card);
+        }
+
+        private void DrawRadarTarget(Graphics g, int tx, int ty, string call, string alt, Color threatColor)
+        {
+            using (SolidBrush b = new SolidBrush(threatColor))
+            {
+                Point[] pts = { new Point(tx, ty - 6), new Point(tx - 5, ty + 4), new Point(tx + 5, ty + 4) };
+                g.FillPolygon(b, pts);
+            }
+            g.DrawString(call, new Font("Segoe UI", 7F, FontStyle.Bold), Brushes.White, tx + 8, ty - 8);
+            g.DrawString(alt, new Font("Segoe UI", 6F), Brushes.Gray, tx + 8, ty + 2);
+        }
+
+        private void SetupAnalyticsPage()
+        {
+            Panel card = new Panel { Width = 680, Height = 360, Location = new Point(30, 30), BackColor = Color.FromArgb(20, 25, 31) };
+            card.Paint += (s, e) => ApplyPanelPaint(card, e, Color.FromArgb(20, 25, 31), Color.FromArgb(38, 45, 54), 12);
+
+            System.Windows.Forms.Label title = new System.Windows.Forms.Label {
+                Text = "FLIGHT PROFILE ANALYTICS",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(255, 90, 31),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            card.Controls.Add(title);
+
+            PictureBox picGraph = new PictureBox { Size = new Size(640, 270), Location = new Point(20, 60), BackColor = Color.Transparent };
+            picGraph.Paint += (s, e) => {
+                Graphics g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                using (Pen gridPen = new Pen(Color.FromArgb(32, 38, 46), 1))
+                {
+                    for (int x = 0; x < picGraph.Width; x += 50)
+                        g.DrawLine(gridPen, x, 0, x, picGraph.Height);
+                    for (int y = 0; y < picGraph.Height; y += 40)
+                        g.DrawLine(gridPen, 0, y, picGraph.Width, y);
+                }
+
+                using (Pen wavePen = new Pen(Color.FromArgb(255, 90, 31), 2.5F))
+                using (Pen wave2Pen = new Pen(Color.FromArgb(16, 185, 129), 1.8F))
+                {
+                    Point[] pts1 = new Point[60];
+                    Point[] pts2 = new Point[60];
+                    for (int i = 0; i < 60; i++)
+                    {
+                        int x = i * 10;
+                        int y1 = 180 - (int)(50 * Math.Sin(i * 0.15) + 30 * Math.Sin(i * 0.35) + 50);
+                        int y2 = 140 - (int)(40 * Math.Cos(i * 0.2) + 40);
+                        pts1[i] = new Point(x, y1);
+                        pts2[i] = new Point(x, y2);
+                    }
+                    g.DrawLines(wavePen, pts1);
+                    g.DrawLines(wave2Pen, pts2);
+                }
+
+                g.DrawString("ALTITUDE PROFILE", new Font("Segoe UI", 7.5F, FontStyle.Bold), Brushes.OrangeRed, 10, 10);
+                g.DrawString("SPEED PROFILE", new Font("Segoe UI", 7.5F, FontStyle.Bold), Brushes.LimeGreen, 10, 25);
+            };
+            card.Controls.Add(picGraph);
+            pnlAnalyticsPage.Controls.Add(card);
+        }
+
+        private void SetupEtaPlannerPage()
+        {
+            Panel card = new Panel { Width = 680, Height = 360, Location = new Point(30, 30), BackColor = Color.FromArgb(20, 25, 31) };
+            card.Paint += (s, e) => ApplyPanelPaint(card, e, Color.FromArgb(20, 25, 31), Color.FromArgb(38, 45, 54), 12);
+
+            System.Windows.Forms.Label title = new System.Windows.Forms.Label {
+                Text = "MISSION LEG & ETA PLANNER",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(255, 90, 31),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            card.Controls.Add(title);
+
+            string[] headers = { "LEG", "TARGET WP", "LEG DIST", "AIRSPEED", "ETE", "EST. FUEL" };
+            for (int i = 0; i < 6; i++)
+            {
+                System.Windows.Forms.Label lblHeader = new System.Windows.Forms.Label {
+                    Text = headers[i],
+                    Font = new Font("Segoe UI", 7.5F, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(124, 135, 150),
+                    Location = new Point(20 + i * 110, 60),
+                    AutoSize = true
+                };
+                card.Controls.Add(lblHeader);
+            }
+
+            string[,] data = {
+                { "1", "WP 01 (Home -> Turn)", "420 m", "12.0 m/s", "00:35", "1.2%" },
+                { "2", "WP 02 (Turn -> Loop)", "680 m", "15.0 m/s", "00:45", "1.8%" },
+                { "3", "WP 03 (Loop -> Land)", "510 m", "10.0 m/s", "00:51", "1.4%" }
+            };
+
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 6; j++)
+                {
+                    System.Windows.Forms.Label lblCell = new System.Windows.Forms.Label {
+                        Text = data[i, j],
+                        Font = new Font("Segoe UI", 8.5F),
+                        ForeColor = Color.White,
+                        Location = new Point(20 + j * 110, 95 + i * 40),
+                        AutoSize = true
+                    };
+                    card.Controls.Add(lblCell);
+                }
+            }
+            pnlEtaPlannerPage.Controls.Add(card);
+        }
+
+        private void SetupSettingsPage()
+        {
+            Panel card = new Panel { Width = 680, Height = 360, Location = new Point(30, 30), BackColor = Color.FromArgb(20, 25, 31) };
+            card.Paint += (s, e) => ApplyPanelPaint(card, e, Color.FromArgb(20, 25, 31), Color.FromArgb(38, 45, 54), 12);
+
+            System.Windows.Forms.Label title = new System.Windows.Forms.Label {
+                Text = "SETTINGS & PARAMETERS",
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                ForeColor = Color.FromArgb(255, 90, 31),
+                Location = new Point(20, 20),
+                AutoSize = true
+            };
+            card.Controls.Add(title);
+
+            string[] settings = { "ENABLE AUTOMATIC GEOLOCATION RECENTERING", "SHOW FLIGHT RADAR TARGETS ON PRIMARY MAP", "TRIGGER FLIGHT SAFETY ALERTS IN SPEECH", "LOG TELEMETRY TO LOCAL DATABASE", "INTEGRATE SECONDARY BATTERY OVERLAY" };
+            for (int i = 0; i < 5; i++)
+            {
+                CheckBox chk = new CheckBox {
+                    Text = settings[i],
+                    ForeColor = Color.White,
+                    Font = new Font("Segoe UI", 8.5F, FontStyle.Bold),
+                    Location = new Point(30, 70 + i * 45),
+                    Size = new Size(500, 25),
+                    Checked = true,
+                    FlatStyle = FlatStyle.Flat
+                };
+                chk.FlatAppearance.BorderColor = Color.FromArgb(255, 90, 31);
+                card.Controls.Add(chk);
+            }
+            pnlSettingsPage.Controls.Add(card);
+        }
+
+        private void UpdateTelemetry()
+        {
+            var cs = MainV2.comPort.MAV.cs;
+            if (cs == null) return;
+
+            roll = cs.roll;
+            pitch = cs.pitch;
+            heading = cs.yaw;
+
+            lblTopAlt.Text = $"{cs.alt:F1} m" + Environment.NewLine + "ALTITUDE";
+            lblTopGS.Text = $"{cs.groundspeed:F1} m/s" + Environment.NewLine + "GROUND SPEED";
+            lblTopDist.Text = $"{cs.wp_dist:F1} m" + Environment.NewLine + "DIST TO WP";
+            lblTopHeading.Text = $"{heading:F0}\u00B0" + Environment.NewLine + "HEADING";
+            lblTopBattery.Text = $"{cs.battery_remaining}%" + Environment.NewLine + "BATTERY";
+            lblTopSats.Text = $"{cs.satcount}" + Environment.NewLine + "SAT COUNT";
+            
+            double secs = cs.timeSinceArmInAir;
+            TimeSpan ts = TimeSpan.FromSeconds(secs);
+            lblTopFlightTime.Text = ts.ToString(@"hh\:mm\:ss") + Environment.NewLine + "FLIGHT TIME";
+            lblTopEtaHome.Text = "00:00" + Environment.NewLine + "ETA TO HOME";
+            lblTopWind.Text = $"{cs.wind_vel:F1} m/s" + Environment.NewLine + "WIND SPEED";
+            lblTopTemp.Text = "24.0 \u00B0C" + Environment.NewLine + "TEMP";
+
+            lblBotAlt.Text = $"{cs.alt:F1} m";
+            lblBotClimb.Text = $"{cs.verticalspeed:F1} m/s";
+            lblBotGS.Text = $"{cs.groundspeed:F1} m/s";
+            lblBotDist.Text = $"{cs.wp_dist:F1} m";
+            lblBotHeading.Text = $"{heading:F0}\u00B0";
+            lblBotRoll.Text = $"{roll:F1}\u00B0";
+            lblBotPitch.Text = $"{pitch:F1}\u00B0";
+            lblBotYaw.Text = $"{cs.yaw:F1}\u00B0";
+            lblBotFlightTime.Text = ts.ToString(@"hh\:mm\:ss");
+            lblBotRcSignal.Text = $"{cs.rxrssi}%";
+
+            radarSweepAngle = (radarSweepAngle + 4) % 360;
+            if (pnlMapToolbar != null) pnlMapToolbar.BringToFront();
+            if (pnlBotOverlay != null) pnlBotOverlay.BringToFront();
+            if (hudHorizon != null) hudHorizon.Invalidate();
+            if (hudCompass != null) hudCompass.Invalidate();
+            if (pnlRadarPage != null && pnlRadarPage.Visible) pnlRadarPage.Invalidate(true);
+            if (pnlTelemStrip != null) pnlTelemStrip.Invalidate(true);
+            if (lblBotAlt?.Parent != null) lblBotAlt.Parent.Invalidate(true);
+        }
+
+        private string GetGpsStatusText()
+        {
+            var cs = MainV2.comPort.MAV.cs;
+            if (cs == null) return "NO GPS";
+            return cs.gpsstatus == 0 ? "NO GPS" : $"3D FIX ({cs.satcount})";
+        }
+
+        private void Horizon_Paint(object sender, PaintEventArgs e)
+        {
+            Graphics g = e.Graphics;
+            g.Clear(Color.FromArgb(16, 20, 24));
             g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            int size = Math.Min(hud.Width, hud.Height) - 40;
-            Rectangle rect = new Rectangle(
-                (hud.Width - size) / 2,
-                (hud.Height - size) / 2,
-                size,
-                size);
+            PictureBox pb = (PictureBox)sender;
+            int size = Math.Min(pb.Width, pb.Height) - 20;
+            Rectangle rect = new Rectangle((pb.Width - size) / 2, (pb.Height - size) / 2, size, size);
 
             using (GraphicsPath clip = new GraphicsPath())
             {
                 clip.AddEllipse(rect);
                 g.SetClip(clip);
 
-                g.TranslateTransform(rect.X + size / 2f, rect.Y + size / 2f);
+                g.TranslateTransform(rect.X + size / 2F, rect.Y + size / 2F);
                 g.RotateTransform(-roll);
-                g.TranslateTransform(0, pitch * 3f);
+                g.TranslateTransform(0, pitch * 2.5F);
 
-                // Sky
-                g.FillRectangle(Brushes.DeepSkyBlue, -size, -size, size * 2, size);
-                // Ground
-                g.FillRectangle(Brushes.OliveDrab, -size, 0, size * 2, size);
-                // Horizon line
-                g.DrawLine(new Pen(Color.White, 3), -size, 0, size, 0);
+                using (SolidBrush skyBrush = new SolidBrush(Color.FromArgb(0, 136, 255)))
+                    g.FillRectangle(skyBrush, -size, -size, size * 2, size);
+                using (SolidBrush groundBrush = new SolidBrush(Color.FromArgb(102, 153, 0)))
+                    g.FillRectangle(groundBrush, -size, 0, size * 2, size);
+                using (Pen pen = new Pen(Color.White, 2))
+                    g.DrawLine(pen, -size, 0, size, 0);
 
-                // Pitch lines
-                using (Pen pitchPen = new Pen(Color.White, 1.5f))
+                using (Pen pitchPen = new Pen(Color.White, 1.2F))
                 {
                     for (int p = -40; p <= 40; p += 10)
                     {
                         if (p == 0) continue;
-                        float y = -p * 3f;
-                        g.DrawLine(pitchPen, -20, y, 20, y);
-                        g.DrawString(p.ToString(), new Font("Times New Roman", 7), Brushes.White, 22, y - 5);
-                        g.DrawString(p.ToString(), new Font("Times New Roman", 7), Brushes.White, -35, y - 5);
+                        float y = -p * 2.5F;
+                        g.DrawLine(pitchPen, -15, y, 15, y);
+                        g.DrawString(p.ToString(), new Font("Segoe UI", 6), Brushes.White, 18, y - 5);
+                        g.DrawString(p.ToString(), new Font("Segoe UI", 6), Brushes.White, -28, y - 5);
                     }
                 }
 
@@ -6924,57 +7592,39 @@ namespace MissionPlanner.GCSViews
                 g.ResetClip();
             }
 
-            // Outer border ellipse
-            g.DrawEllipse(new Pen(Color.White, 3), rect);
+            using (Pen borderPen = new Pen(Color.White, 2))
+                g.DrawEllipse(borderPen, rect);
 
-            // Draw compass ticks & labels
-            DrawCompass(g, rect);
-
-            // Center fixed aircraft symbol
-            using (Pen craftPen = new Pen(Color.Red, 3))
+            using (Pen craftPen = new Pen(Color.FromArgb(239, 68, 68), 2.5F))
             {
-                float cx = rect.X + size / 2f;
-                float cy = rect.Y + size / 2f;
-                g.DrawLine(craftPen, cx - 25, cy, cx - 10, cy);
-                g.DrawLine(craftPen, cx + 10, cy, cx + 25, cy);
-                g.DrawLine(craftPen, cx - 10, cy, cx, cy + 8);
-                g.DrawLine(craftPen, cx + 10, cy, cx, cy + 8);
-            }
-
-            // Status overlays (Odin details)
-            var cs = MainV2.comPort.MAV.cs;
-            if (cs != null)
-            {
-                g.DrawString($"AS {cs.airspeed:F1} m/s", new Font("Times New Roman", 8, FontStyle.Bold), Brushes.White, rect.Left + 5, rect.Bottom - 35);
-                g.DrawString($"GS {cs.groundspeed:F1} m/s", new Font("Times New Roman", 8, FontStyle.Bold), Brushes.White, rect.Left + 5, rect.Bottom - 20);
-
-                string armText = cs.armed ? "ARMED" : "DISARMED";
-                Brush armBrush = cs.armed ? Brushes.Lime : Brushes.Red;
-                g.DrawString(armText, new Font("Times New Roman", 10, FontStyle.Bold), armBrush, rect.X + size / 2f - 30, rect.Bottom - 45);
-
-                string ekfText = "EKF";
-                Brush ekfBrush = cs.ekfstatus > 0.5f ? Brushes.Red : Brushes.Lime;
-                g.DrawString(ekfText, new Font("Times New Roman", 9, FontStyle.Bold), ekfBrush, rect.X + size / 2f - 12, rect.Bottom - 28);
-
-                string batText = $"Bat {cs.battery_voltage:F1}V {cs.current:F1}A {cs.battery_remaining}%";
-                g.DrawString(batText, new Font("Times New Roman", 8, FontStyle.Bold), Brushes.White, rect.Right - 110, rect.Bottom - 35);
-
-                string gpsText = cs.gpsstatus == 0 ? "GPS: No GPS" : $"GPS: 3D Fix ({cs.satcount})";
-                g.DrawString(gpsText, new Font("Times New Roman", 8, FontStyle.Bold), Brushes.White, rect.Right - 110, rect.Bottom - 20);
+                float cx = rect.X + size / 2F;
+                float cy = rect.Y + size / 2F;
+                g.DrawLine(craftPen, cx - 18, cy, cx - 6, cy);
+                g.DrawLine(craftPen, cx + 6, cy, cx + 18, cy);
+                g.DrawLine(craftPen, cx - 6, cy, cx, cy + 4);
+                g.DrawLine(craftPen, cx + 6, cy, cx, cy + 4);
             }
         }
 
-        private void DrawCompass(Graphics g, Rectangle r)
+        private void Compass_Paint(object sender, PaintEventArgs e)
         {
-            int radius = r.Width / 2;
-            Point center = new Point(r.X + radius, r.Y + radius);
+            Graphics g = e.Graphics;
+            g.Clear(Color.FromArgb(16, 20, 24));
+            g.SmoothingMode = SmoothingMode.AntiAlias;
 
-            using (Pen tickPen = new Pen(Color.White, 1.5f))
+            PictureBox pb = (PictureBox)sender;
+            int size = Math.Min(pb.Width, pb.Height) - 20;
+            Rectangle rect = new Rectangle((pb.Width - size) / 2, (pb.Height - size) / 2, size, size);
+            int radius = size / 2;
+            Point center = new Point(rect.X + radius, rect.Y + radius);
+
+            using (Pen tickPen = new Pen(Color.FromArgb(124, 135, 150), 1))
             {
                 for (int i = 0; i < 360; i += 10)
                 {
                     double a = (i - heading - 90) * Math.PI / 180.0;
-                    int r1 = radius - 8;
+                    int length = (i % 30 == 0) ? 8 : 4;
+                    int r1 = radius - length;
                     int r2 = radius;
 
                     Point p1 = new Point(
@@ -6994,12 +7644,40 @@ namespace MissionPlanner.GCSViews
             for (int idx = 0; idx < 4; idx++)
             {
                 double a = (angles[idx] - heading - 90) * Math.PI / 180.0;
-                int rText = radius + 12;
+                int rText = radius - 18;
                 Point pText = new Point(
-                    center.X + (int)(Math.Cos(a) * rText) - 6,
-                    center.Y + (int)(Math.Sin(a) * rText) - 8);
+                    center.X + (int)(Math.Cos(a) * rText) - 5,
+                    center.Y + (int)(Math.Sin(a) * rText) - 6);
 
-                g.DrawString(dirs[idx], new Font("Times New Roman", 10, FontStyle.Bold), Brushes.White, pText);
+                g.DrawString(dirs[idx], new Font("Segoe UI", 8F, FontStyle.Bold), Brushes.White, pText);
+            }
+
+            for (int angle = 30; angle < 360; angle += 30)
+            {
+                if (angle % 90 == 0) continue;
+                double a = (angle - heading - 90) * Math.PI / 180.0;
+                int rText = radius - 18;
+                Point pText = new Point(
+                    center.X + (int)(Math.Cos(a) * rText) - 7,
+                    center.Y + (int)(Math.Sin(a) * rText) - 5);
+
+                g.DrawString((angle / 10).ToString("00"), new Font("Segoe UI", 6F), Brushes.Gray, pText);
+            }
+
+            using (Pen borderPen = new Pen(Color.FromArgb(124, 135, 150), 1))
+                g.DrawEllipse(borderPen, rect);
+
+            string hdgStr = $"{(int)heading:000}°";
+            using (Font f = new Font("Segoe UI", 12F, FontStyle.Bold))
+            {
+                SizeF sz = g.MeasureString(hdgStr, f);
+                g.DrawString(hdgStr, f, new SolidBrush(Color.FromArgb(255, 90, 31)), center.X - sz.Width / 2F, center.Y - sz.Height / 2F);
+            }
+
+            using (SolidBrush b = new SolidBrush(Color.FromArgb(255, 90, 31)))
+            {
+                Point[] pts = { new Point(center.X, rect.Top), new Point(center.X - 5, rect.Top - 8), new Point(center.X + 5, rect.Top - 8) };
+                g.FillPolygon(b, pts);
             }
         }
     }

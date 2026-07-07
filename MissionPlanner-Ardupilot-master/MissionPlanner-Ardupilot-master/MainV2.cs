@@ -346,7 +346,7 @@ namespace MissionPlanner
             }
         }
 
-        Controls.MainSwitcher MyView;
+        public Controls.MainSwitcher MyView;
 
         private static DisplayView _displayConfiguration = File.Exists(DisplayViewExtensions.custompath)
             ? new DisplayView().Custom()

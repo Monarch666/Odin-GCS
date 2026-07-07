@@ -38,6 +38,12 @@ namespace MissionPlanner.Controls
             get { return MainControl.Controls; }
         }
 
+        public Padding Padding
+        {
+            get { return MainControl.Padding; }
+            set { MainControl.Padding = value; }
+        }
+
         public MainSwitcher(Control Parent)
         {
             MainControl.Dock = DockStyle.Fill;

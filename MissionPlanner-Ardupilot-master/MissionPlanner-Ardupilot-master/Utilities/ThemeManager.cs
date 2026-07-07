@@ -1283,6 +1283,8 @@ mc:Ignorable=""d""
                 {
                     ctl.BackColor = BGColor;
                     ctl.ForeColor = TextColor;
+                    GroupBox gb = (GroupBox)ctl;
+                    gb.FlatStyle = FlatStyle.Flat;
                 }
                 else if (ctl.GetType() == typeof(MyLabel))
                 {
@@ -1291,19 +1293,47 @@ mc:Ignorable=""d""
                 }
                 else if (ctl.GetType() == typeof(Button))
                 {
-                    ctl.ForeColor = Color.Black;
-                    ctl.BackColor = ButBG;
+                    if (isDarkPanel)
+                    {
+                        ctl.ForeColor = Color.FromArgb(255, 90, 31);
+                        ctl.BackColor = Color.FromArgb(20, 24, 28);
+                        Button btn = (Button)ctl;
+                        btn.FlatStyle = FlatStyle.Flat;
+                        btn.FlatAppearance.BorderColor = Color.FromArgb(255, 90, 31);
+                        btn.FlatAppearance.BorderSize = 1;
+                        btn.Font = new Font("Segoe UI", ctl.Font.Size, FontStyle.Bold);
+                    }
+                    else
+                    {
+                        ctl.ForeColor = Color.Black;
+                        ctl.BackColor = ButBG;
+                    }
                 }
                 else if (ctl is MyButton but)
                 {
-                    but.BGGradTop = ButBG;
-                    but.BGGradBot = ButBGBot;
-                    but.TextColor = ButtonTextColor;
-                    but.TextColorNotEnabled = ButtonTextColorNotEnabled;
-                    but.Outline = ButBorder;
-                    but.ColorMouseDown = ColorMouseDown;        //sets the colour of buttons for different situations
-                    but.ColorMouseOver = ColorMouseOver;
-                    but.ColorNotEnabled = ColorNotEnabled;
+                    if (isDarkPanel)
+                    {
+                        but.BGGradTop = Color.FromArgb(20, 24, 28);
+                        but.BGGradBot = Color.FromArgb(20, 24, 28);
+                        but.TextColor = Color.FromArgb(255, 90, 31);
+                        but.TextColorNotEnabled = Color.FromArgb(120, 255, 90, 31);
+                        but.Outline = Color.FromArgb(255, 90, 31);
+                        but.ColorMouseOver = Color.FromArgb(40, 255, 90, 31);
+                        but.ColorMouseDown = Color.FromArgb(70, 255, 90, 31);
+                        but.ColorNotEnabled = Color.FromArgb(20, 20, 20);
+                        but.Font = new Font("Segoe UI", ctl.Font.Size, FontStyle.Bold);
+                    }
+                    else
+                    {
+                        but.BGGradTop = ButBG;
+                        but.BGGradBot = ButBGBot;
+                        but.TextColor = ButtonTextColor;
+                        but.TextColorNotEnabled = ButtonTextColorNotEnabled;
+                        but.Outline = ButBorder;
+                        but.ColorMouseDown = ColorMouseDown;
+                        but.ColorMouseOver = ColorMouseOver;
+                        but.ColorNotEnabled = ColorNotEnabled;
+                    }
                 }
                 else if (ctl.GetType() == typeof(TextBox))
                 {
@@ -1465,6 +1495,17 @@ mc:Ignorable=""d""
                 {
                     ctl.BackColor = BGColorTextBox;
                     ctl.ForeColor = TextColor;
+                    NumericUpDown nud = (NumericUpDown)ctl;
+                    nud.BorderStyle = BorderStyle.FixedSingle;
+                    foreach (Control child in ctl.Controls)
+                    {
+                        child.BackColor = BGColorTextBox;
+                        child.ForeColor = TextColor;
+                        if (child is TextBox txt)
+                        {
+                            txt.BorderStyle = BorderStyle.None;
+                        }
+                    }
                 }
                 else if (ctl.GetType() == typeof(TrackBar))
                 {
@@ -1474,11 +1515,20 @@ mc:Ignorable=""d""
                 else if (ctl.GetType() == typeof(LinkLabel))
                 {
                     ctl.BackColor = System.Drawing.Color.Transparent;
-                    ctl.ForeColor = TextColor;
                     LinkLabel LNK = (LinkLabel)ctl;
-                    LNK.ActiveLinkColor = TextColor;
-                    LNK.LinkColor = TextColor;
-                    LNK.VisitedLinkColor = TextColor;
+                    if (isDarkPanel)
+                    {
+                        LNK.LinkColor = Color.FromArgb(255, 90, 31);
+                        LNK.ActiveLinkColor = Color.FromArgb(255, 110, 50);
+                        LNK.VisitedLinkColor = Color.FromArgb(255, 90, 31);
+                    }
+                    else
+                    {
+                        LNK.ForeColor = TextColor;
+                        LNK.ActiveLinkColor = TextColor;
+                        LNK.LinkColor = TextColor;
+                        LNK.VisitedLinkColor = TextColor;
+                    }
                 }
                 else if (ctl.GetType() == typeof(BackstageView))
                 {

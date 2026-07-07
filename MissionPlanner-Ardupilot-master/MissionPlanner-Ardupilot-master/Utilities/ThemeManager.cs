@@ -810,6 +810,7 @@ mc:Ignorable=""d""
                 string name = type.Name;
 
                 if (name == "InitialSetup" || 
+                    name == "FirmwareSetup" ||
                     name.StartsWith("ConfigHW") || 
                     name.StartsWith("ConfigFirmware") || 
                     name.StartsWith("ConfigAccel") || 

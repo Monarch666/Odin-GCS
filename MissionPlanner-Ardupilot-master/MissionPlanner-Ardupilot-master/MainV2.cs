@@ -4938,12 +4938,16 @@ namespace MissionPlanner
             baudRateCombo.Parent = null;
             sysIdCombo.Parent = null;
 
+            // Bind DropDown event to dynamically refresh available COM ports list
+            serialPortCombo.DropDown += (s, ev) => PopulateSerialportList();
+
             // Panel wrappers for styling margins
             Panel serialPanel = new Panel { Dock = DockStyle.Top, Height = 35, Padding = new Padding(0, 3, 0, 3) };
             serialPortCombo.Dock = DockStyle.Fill;
             serialPortCombo.FlatStyle = FlatStyle.Flat;
             serialPortCombo.BackColor = OdinTheme.Background;
             serialPortCombo.ForeColor = OdinTheme.White;
+            serialPortCombo.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
             serialPanel.Controls.Add(serialPortCombo);
 
             Panel baudPanel = new Panel { Dock = DockStyle.Top, Height = 35, Padding = new Padding(0, 3, 0, 3) };
@@ -4951,6 +4955,7 @@ namespace MissionPlanner
             baudRateCombo.FlatStyle = FlatStyle.Flat;
             baudRateCombo.BackColor = OdinTheme.Background;
             baudRateCombo.ForeColor = OdinTheme.White;
+            baudRateCombo.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
             baudPanel.Controls.Add(baudRateCombo);
 
             Panel sysPanel = new Panel { Dock = DockStyle.Top, Height = 35, Padding = new Padding(0, 3, 0, 3) };
@@ -4958,6 +4963,7 @@ namespace MissionPlanner
             sysIdCombo.FlatStyle = FlatStyle.Flat;
             sysIdCombo.BackColor = OdinTheme.Background;
             sysIdCombo.ForeColor = OdinTheme.White;
+            sysIdCombo.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
             sysPanel.Controls.Add(sysIdCombo);
 
             connectionCard.Controls.Add(sysPanel);
